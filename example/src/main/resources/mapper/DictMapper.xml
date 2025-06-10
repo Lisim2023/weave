@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.filaura.weave.example.system.mapper.DictMapper">
+
+	<resultMap type="SysDict" id="DictResult">
+		<id     property="id"       	column="id"			/>
+		<result property="name"     	column="name"		/>
+		<result property="code"     	column="code"		/>
+		<result property="description"	column="description"/>
+		<result property="enabled"		column="enabled"	/>
+
+		<result property="createBy"     column="create_by" />
+		<result property="createTime" 	column="create_time" />
+		<result property="updateBy"     column="update_by" />
+		<result property="updateTime"   column="update_time" />
+		<result property="delFlag"      column="del_flag"   />
+	</resultMap>
+
+
+
+	<select id="selectDictList" resultMap="DictResult">
+		select id, name, code, description, create_by, create_time, update_by, update_time
+		from sys_dict
+		where del_flag = 0
+		and enabled = 0
+	</select>
+
+	<select id="queryRefData" resultType="java.util.Map">
+		select id, name, code, description
+		from sys_dict
+		where del_flag = 0
+		and enabled = 0
+		and id in
+		<foreach collection="ids" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+
+</mapper> 

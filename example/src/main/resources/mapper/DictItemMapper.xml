@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.filaura.weave.example.system.mapper.DictItemMapper">
+
+	<resultMap type="DictItem" id="DictItemResult">
+		<id     property="id"       	column="id"			/>
+		<result property="dictId"     	column="dict_id"	/>
+		<result property="value"     	column="value"		/>
+		<result property="text"     	column="text"    	/>
+		<result property="description"	column="description"/>
+		<result property="orderNum"     column="order_num"	/>
+		<result property="enabled"      column="enabled"	/>
+
+		<result property="createBy"     column="create_by" />
+		<result property="createTime" 	column="create_time" />
+		<result property="updateBy"     column="update_by" />
+		<result property="updateTime"   column="update_time" />
+	</resultMap>
+
+	<select id="selectDictItemList" resultMap="DictItemResult">
+		select id, dict_id, value, label, description, order_num, enabled, create_by, create_time, update_by, update_time
+		from sys_dict_item
+		where enabled = 0
+		order by dict_id, order_num
+	</select>
+
+
+</mapper> 

@@ -1,0 +1,35 @@
+server:
+  port: 8088
+
+# DataSource Config
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/weave_example?allowPublicKeyRetrieval=true&useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: root
+    password: 123456
+
+  servlet:
+    multipart:
+      max-file-size: 1MB
+
+#redis Config
+#  data:
+#    redis:
+#      host: localhost
+#      port: 6379
+
+
+# MyBatis配置
+mybatis:
+  typeAliasesPackage: cn.filaura.weave.example.system.entity
+  # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath*:mapper/*.xml
+  # 加载全局的配置文件
+  #  configLocation: classpath:mybatis/mybatis-config.xml
+  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    use-generated-keys: true
+
+
+
