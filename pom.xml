@@ -9,6 +9,31 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
+    <name>weave-parent</name>
+    <description>Shared plugin configurations and properties</description>
+    <url>https://github.com/Lisim2023/weave</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Lisim2023</name>
+            <email>138837428+Lisim2023@users.noreply.github.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/Lisim2023/weave</url>
+        <connection>scm:git@github.com:Lisim2023/weave.git</connection>
+    </scm>
+
     <modules>
         <module>core</module>
         <module>cache</module>
@@ -96,7 +121,6 @@
                 <extensions>true</extensions>
                 <configuration>
                     <excludeArtifacts>
-                        <excludeArtifact>weave-parent</excludeArtifact>
                         <excludeArtifact>weave-example</excludeArtifact>
                     </excludeArtifacts>
                     <publishingServerId>central</publishingServerId>

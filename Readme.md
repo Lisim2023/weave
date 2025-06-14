@@ -90,4 +90,130 @@ private User user;  // 自动注入User对象的name、avatar等同名属性
 
 
 
-待完成
+## 快速开始
+
+### 1. 引入依赖
+核心依赖：
+```xml
+<dependency>
+    <groupId>cn.filaura</groupId>
+    <artifactId>weave</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+Redis缓存支持（已依赖核心组件）：
+```xml
+<dependency>
+    <groupId>cn.filaura</groupId>
+    <artifactId>weave-cache-redis</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+
+### 2. 初始化与数据源配置
+Weave 提供了两个核心助手类字典助手`DictHelper`和引用助手`RefHelper`，分别作为字典和引用功能的操作入口。
+两个助手互相独立，可**单独配置和使用**
+
+#### 初始化步骤简要如下：
+- #### 实现数据源接口（需自行实现）
+  - ##### 字典数据源接口`DictDataSource`: 根据字典标识码查询字典数据
+  - ##### 引用数据源接口`RefDataSource`: 根据表名、列名、主键名与主键值查询关联记录
+
+- #### 使用数据源接口实例初始化对应的助手类：
+```java
+// 示例伪代码
+DictDataSource dictDataSource = new MyDictDataSource();
+DictHelper dictHelper = new DictHelper(dictDataSource);
+
+RefDataSource refDataSource = new MyRefDataSource();
+RefHelper refHelper = new RefHelper(refDataSource);
+```
+> **完整的接口实现与配置流程可参考示例项目：[weave-example](./example)**
+
+
+### 3. 集成与使用
+调用助手方法，传入数据对象即可（支持集合类型）。
+
+推荐定义切面，在切面中统一处理，例如：
+```java
+@Aspect
+@Component
+public class WeaveAspect {
+  
+    @Resource
+    private RefHelper refHelper;
+
+    @Resource
+    private DictHelper dictHelper;
+    
+    @Pointcut("@annotation(cn.filaura.weave.annotation.Weave)")
+    public void weave() {
+    }
+    
+    @AfterReturning(value = "weave()", returning = "result")
+    public void afterReturning(Object result) {
+        // 填充引用数据
+        refHelper.populateRefData(result);
+        // 填充字典文本
+        dictHelper.populateDictText(result);
+    }
+}
+```
+上述切面会在指定方法执行完毕后，自动对方法的返回值进行数据填充处理。接下来在需要处理的目标方法上添加`@Weave`注解即可。
+
+
+
+## 扩展与定制
+
+- #### 多数据源支持
+如果项目涉及多个数据源，可通过自定义实现 `DictDataProvider` 或 `RefDataProvider` 接口，灵活控制如何从不同数据源中获取数据，从而实现多数据源的调度与管理。
+
+与数据源接口一致，你也可以直接使用自己实现的 DataProvider 接口来初始化助手类，例如：
+```java
+// 示例伪代码
+DictDataProvider dictDataProvider = new MyDictDataProvider();
+DictHelper dictHelper = new DictHelper(dictDataProvider);
+
+RefDataProvider refDataProvider = new MyRefDataProvider();
+RefHelper refHelper = new RefHelper(refDataProvider);
+```
+
+
+- #### 自定义属性访问器
+通过实现`BeanAccessor`接口，可以自定义属性的获取与设置行为，例如使用 Map 存储对象属性、动态生成字段等。
+
+初始化助手类时，将 `BeanAccessor` 实例作为参数传入构造方法即可替换默认实现，例如：
+```java
+// 示例伪代码
+DictDataSource dataSource = new MyDictDataSource();
+BeanAccessor beanAccessor = new MyBeanAccessor();
+
+DictHelper dictHelper = new DictHelper(dataSource, beanAccessor);
+```
+
+
+- #### 自定义类型转换器
+为目标类型实现`Convert<T>`接口，并在程序启动或初始化阶段，调用`ConvertUtil.register()`方法进行注册：
+```java
+// 示例伪代码
+ConvertUtil.register(MyType.class, new MyTypeConverter());
+```
+重复注册相同类型会覆盖之前的转换器。
+
+
+附简易组件图以供参考：
+```
+XxxHelper
+│
+├── XxxDataProvider（数据提供接口）
+│   ├── DirectDataSourceXxxDataProvider（直连数据源策略）
+│   │   └── XxxDataSource（数据源接口）
+│   └── CacheFirstXxxDataProvider（缓存优先策略）
+│       ├── XxxDataCache（缓存接口）
+│       └── XxxDataSource（数据源接口）
+│
+└── BeanAccessor (属性访问接口)
+    └── ConvertUtil（类型转换工具类）
+        └── Convert<T>（类型转换接口）
+```

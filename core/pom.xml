@@ -11,4 +11,29 @@
 
     <artifactId>weave</artifactId>
 
+    <name>weave</name>
+    <description>A lightweight Java toolkit that automates dictionary mapping and cross-table referencing processing through annotations, slashing boilerplate code</description>
+    <url>https://github.com/Lisim2023/weave</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Lisim2023</name>
+            <email>138837428+Lisim2023@users.noreply.github.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/Lisim2023/weave</url>
+        <connection>scm:git@github.com:Lisim2023/weave.git</connection>
+    </scm>
+
 </project>
