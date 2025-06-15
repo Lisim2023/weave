@@ -2,21 +2,21 @@ Weave
 ==========
 Weave 是一款轻量级的 Java 开发工具库，
 旨在通过注解驱动的方式来简化常见的数据处理任务。
-主要包括字典数据转换以及跨表数据引用两种功能。
-它能够显著减少手动编写繁琐 SQL 的工作量，同时提高代码的可维护性和可读性。
+主要包括字典翻译以及跨表数据引用两种功能。
+它能够显著减少手动编写跨表查询/字典翻译的SQL的工作量，同时提高代码的可维护性和可读性。
 
 
 ## 注解介绍
 
 - ### `@Dict` 字典注解
-`@Dict`注解用于完成数据字典的值与展示文本之间的双向转换。
+`@Dict`注解用于完成数据字典的值与展示文本之间的双向翻译。
 
 使用该注解可以轻松地将数据库中存储的编码值转换为可读性更强的文本表示，并且反之亦然。
 
-| 参数          |  必填  | 说明                      |
-|---------------|:----:|-------------------------|
-| `code`        |  ✅   | 字典标识码                   |
-| `targetField` | ❌    | 目标属性名（默认值为 `原属性名 + Text`） |
+| 参数          | 必填 | 说明                      |
+|---------------|:--:|-------------------------|
+| `code`        | ✅  | 字典标识码                   |
+| `targetField` | ❌  | 目标属性名（默认值为 `原属性名 + Text`） |
 
 使用示例：
 ```java
@@ -75,12 +75,19 @@ private Integer roleIdRefLevel; // 对应level列
 private Long userId;
 private User user;  // 自动注入User对象的name、avatar等同名属性
 ```
-
+若关联表字段与目标对象属性命名不一致，可配合`bindings`参数手动绑定。
 
 - ### 其他注解
 
   - #### `@Cascade` 注解
-    用于处理对象间的递归或级联关系。例如，菜单项可能包含子菜单项。支持集合类型。
+    用于处理对象间的递归或级联关系。例如，菜单项可能包含子菜单项。标注在需要递归处理的属性上即可，支持集合类型。例如：
+
+  ```java
+  public class Menu {
+      @Cascade
+      private List<Menu> children;  // 自动递归处理子菜单
+  }
+  ```
 
   - #### `@ColumnBinding` 注解
     `@ColumnBinding`注解是`@Ref`注解的辅助注解，用于在`bindings`数组中显式声明列与属性的映射
@@ -93,6 +100,8 @@ private User user;  // 自动注入User对象的name、avatar等同名属性
 ## 快速开始
 
 ### 1. 引入依赖
+> 当前版本： v1.0.0
+
 核心依赖：
 ```xml
 <dependency>
@@ -113,12 +122,13 @@ Redis缓存支持（已依赖核心组件）：
 
 ### 2. 初始化与数据源配置
 Weave 提供了两个核心助手类字典助手`DictHelper`和引用助手`RefHelper`，分别作为字典和引用功能的操作入口。
-两个助手互相独立，可**单独配置和使用**
+`DictHelper`与`RefHelper`完全解耦，可根据需求**单独配置和使用**
 
 #### 初始化步骤简要如下：
 - #### 实现数据源接口（需自行实现）
   - ##### 字典数据源接口`DictDataSource`: 根据字典标识码查询字典数据
   - ##### 引用数据源接口`RefDataSource`: 根据表名、列名、主键名与主键值查询关联记录
+
 
 - #### 使用数据源接口实例初始化对应的助手类：
 ```java
@@ -166,10 +176,27 @@ public class WeaveAspect {
 
 ## 扩展与定制
 
+简易组件图：
+```
+XxxHelper
+│
+├── XxxDataProvider（数据提供接口）
+│   ├── DirectDataSourceXxxDataProvider（直连数据源策略）
+│   │   └── XxxDataSource（数据源接口）
+│   └── CacheFirstXxxDataProvider（缓存优先策略）
+│       ├── XxxDataCache（缓存接口）
+│       └── XxxDataSource（数据源接口）
+│
+└── BeanAccessor (属性访问接口)
+    └── ConvertUtil（类型转换工具类）
+        └── Convert<T>（类型转换接口）
+```
+
+
 - #### 多数据源支持
 如果项目涉及多个数据源，可通过自定义实现 `DictDataProvider` 或 `RefDataProvider` 接口，灵活控制如何从不同数据源中获取数据，从而实现多数据源的调度与管理。
 
-与数据源接口一致，你也可以直接使用自己实现的 DataProvider 接口来初始化助手类，例如：
+和数据源接口一样，你也可以直接使用自己实现的 DataProvider 接口来初始化助手类，例如：
 ```java
 // 示例伪代码
 DictDataProvider dictDataProvider = new MyDictDataProvider();
@@ -200,20 +227,3 @@ DictHelper dictHelper = new DictHelper(dataSource, beanAccessor);
 ConvertUtil.register(MyType.class, new MyTypeConverter());
 ```
 重复注册相同类型会覆盖之前的转换器。
-
-
-附简易组件图以供参考：
-```
-XxxHelper
-│
-├── XxxDataProvider（数据提供接口）
-│   ├── DirectDataSourceXxxDataProvider（直连数据源策略）
-│   │   └── XxxDataSource（数据源接口）
-│   └── CacheFirstXxxDataProvider（缓存优先策略）
-│       ├── XxxDataCache（缓存接口）
-│       └── XxxDataSource（数据源接口）
-│
-└── BeanAccessor (属性访问接口)
-    └── ConvertUtil（类型转换工具类）
-        └── Convert<T>（类型转换接口）
-```
