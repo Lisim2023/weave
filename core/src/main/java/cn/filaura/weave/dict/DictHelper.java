@@ -28,7 +28,6 @@ public class DictHelper {
 
     private final DictDataProvider dictDataProvider;
     private final DictWeaver dictWeaver;
-    private final DictReverseWeaver dictReverseWeaver;
 
 
     /**
@@ -60,7 +59,6 @@ public class DictHelper {
     public DictHelper(DictDataProvider dictDataProvider, BeanAccessor beanAccessor) {
         this.dictDataProvider = dictDataProvider;
         this.dictWeaver = new DictWeaver(beanAccessor);
-        this.dictReverseWeaver = new DictReverseWeaver(beanAccessor);
     }
 
 
@@ -156,7 +154,7 @@ public class DictHelper {
             throw new DictDataNotFoundException("Dictionary data is null for codes: " + dictCodes);
         }
 
-        dictWeaver.weave(beans, dict);
+        dictWeaver.populateDictText(beans, dict);
         return beans;
     }
 
@@ -168,7 +166,7 @@ public class DictHelper {
      */
     public <T> T populateDictValue(T beans)
             throws DictDataNotFoundException, BeanAccessException {
-        Set<String> dictCodes = dictReverseWeaver.collectDictCodes(beans);
+        Set<String> dictCodes = dictWeaver.collectDictCodes(beans);
         if (dictCodes == null || dictCodes.isEmpty()) {
             return beans;
         }
@@ -178,7 +176,7 @@ public class DictHelper {
             throw new DictDataNotFoundException("Dictionary data is null for codes: " + dictCodes);
         }
 
-        dictReverseWeaver.weave(beans, dict);
+        dictWeaver.populateDictValue(beans, dict);
         return beans;
     }
 
@@ -188,7 +186,7 @@ public class DictHelper {
      * @return 字典属性名后缀
      */
     public String getFieldNameSuffix() {
-        return DictWeaver.getFieldNameSuffix();
+        return dictWeaver.getFieldNameSuffix();
     }
 
     /**
@@ -196,7 +194,7 @@ public class DictHelper {
      * @param fieldNameSuffix 新的属性名后缀
      */
     public void setFieldNameSuffix(String fieldNameSuffix) {
-        DictWeaver.setFieldNameSuffix(fieldNameSuffix);
+        dictWeaver.setFieldNameSuffix(fieldNameSuffix);
     }
 
     /**
@@ -204,7 +202,7 @@ public class DictHelper {
      * @return 分隔符
      */
     public String getDelimiter() {
-        return DictWeaver.getDelimiter();
+        return dictWeaver.getDelimiter();
     }
 
     /**
@@ -212,7 +210,7 @@ public class DictHelper {
      * @param delimiter 分隔符
      */
     public void setDelimiter(String delimiter) {
-        DictWeaver.setDelimiter(delimiter);
+        dictWeaver.setDelimiter(delimiter);
     }
 
 }

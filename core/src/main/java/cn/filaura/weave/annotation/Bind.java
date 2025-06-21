@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  */
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ColumnBinding {
+public @interface Bind {
 
     /**
      * 数据表中的列名

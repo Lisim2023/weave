@@ -35,9 +35,9 @@ public @interface Ref {
      * 要引用的列与目标属性的绑定规则数组（可选）。
      *
      * @return 列绑定规则数组
-     * @see ColumnBinding
+     * @see Bind
      */
-    ColumnBinding[] bindings() default {};
+    Bind[] bindings() default {};
 
     /**
      * 要引用的列名（可选）。

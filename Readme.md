@@ -52,8 +52,8 @@ private String genderText;
 @Ref(
         table = "sys_role",
         bindings = {
-                @ColumnBinding(column = "name", targetField = "roleName"),
-                @ColumnBinding(column = "level", targetField = "roleLevel")
+                @Bind(column = "name", targetField = "roleName"),
+                @Bind(column = "level", targetField = "roleLevel")
         }
 )
 private Long roleId;
@@ -89,8 +89,8 @@ private User user;  // 自动注入User对象的name、avatar等同名属性
   }
   ```
 
-  - #### `@ColumnBinding` 注解
-    `@ColumnBinding`注解是`@Ref`注解的辅助注解，用于在`bindings`数组中显式声明列与属性的映射
+  - #### `@Bind` 注解
+    `@Bind`注解是`@Ref`注解的辅助注解，用于在`bindings`数组中显式声明列与属性的映射
 
   - #### `@Weave` 注解
     可用于定义切点，结合 AOP 实现统一的数据处理逻辑。
@@ -100,14 +100,14 @@ private User user;  // 自动注入User对象的name、avatar等同名属性
 ## 快速开始
 
 ### 1. 引入依赖
-> 当前版本： v1.0.0
+> 当前版本： v1.0.1
 
 核心依赖：
 ```xml
 <dependency>
     <groupId>cn.filaura</groupId>
     <artifactId>weave</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 Redis缓存支持（已依赖核心组件）：
@@ -115,7 +115,7 @@ Redis缓存支持（已依赖核心组件）：
 <dependency>
     <groupId>cn.filaura</groupId>
     <artifactId>weave-cache-redis</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 

@@ -6,7 +6,7 @@
     <parent>
         <groupId>cn.filaura</groupId>
         <artifactId>weave-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>weave-cache-redis</artifactId>
@@ -40,7 +40,7 @@
         <dependency>
             <groupId>cn.filaura</groupId>
             <artifactId>weave</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
         <dependency>

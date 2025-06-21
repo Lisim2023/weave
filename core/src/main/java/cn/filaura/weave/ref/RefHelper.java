@@ -72,7 +72,7 @@ public class RefHelper {
         }
 
         refDataProvider.getRefData(refInfoMap.values());
-        refWeaver.weave(beans, refInfoMap);
+        refWeaver.populateRefData(beans, refInfoMap);
         return beans;
     }
 
@@ -83,7 +83,7 @@ public class RefHelper {
      * @return 当前使用的分隔符
      */
     public String getDelimiter() {
-        return RefWeaver.getDelimiter();
+        return refWeaver.getDelimiter();
     }
 
     /**
@@ -91,7 +91,7 @@ public class RefHelper {
      * @param delimiter 新的分隔符
      */
     public void setDelimiter(String delimiter) {
-        RefWeaver.setDelimiter(delimiter);
+        refWeaver.setDelimiter(delimiter);
     }
 
     /**
@@ -99,7 +99,7 @@ public class RefHelper {
      * @return 当前使用的属性名中缀
      */
     public String getFieldNameInfix() {
-        return RefWeaver.getFieldNameInfix();
+        return refWeaver.getFieldNameInfix();
     }
 
     /**
@@ -107,7 +107,7 @@ public class RefHelper {
      * @param fieldNameInfix 新的属性名中缀
      */
     public void setFieldNameInfix(String fieldNameInfix) {
-        RefWeaver.setFieldNameInfix(fieldNameInfix);
+        refWeaver.setFieldNameInfix(fieldNameInfix);
     }
 
     /**
@@ -115,14 +115,30 @@ public class RefHelper {
      * @return 当前使用的空值占位文本
      */
     public String getNullDisplayText() {
-        return RefWeaver.getNullDisplayText();
+        return refWeaver.getNullDisplayText();
     }
 
     /**
-     * 设置空值显示文本
-     * @param nullDisplayText 新的空值占位文本，当引用数据为null时显示
+     * 设置空值显示文本，当被引用的字段为null时显示
+     * @param nullDisplayText 新的空值占位文本
      */
     public void setNullDisplayText(String nullDisplayText) {
-        RefWeaver.setNullDisplayText(nullDisplayText);
+        refWeaver.setNullDisplayText(nullDisplayText);
+    }
+
+    /**
+     * 设置当被引用的记录不存在时的处理方式
+     * @param missingReferenceBehavior 新的处理方式
+     */
+    public void setMissingReferenceBehavior(MissingReferenceBehavior missingReferenceBehavior) {
+        refWeaver.setMissingReferenceBehavior(missingReferenceBehavior);
+    }
+
+    /**
+     * 获取当前设置的被引用的记录不存在时的处理方式
+     * @return 当前处理方式
+     */
+    public MissingReferenceBehavior getMissingReferenceBehavior() {
+        return refWeaver.getMissingReferenceBehavior();
     }
 }
