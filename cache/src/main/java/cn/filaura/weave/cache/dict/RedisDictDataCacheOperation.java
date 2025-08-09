@@ -12,9 +12,9 @@ import java.util.*;
 /**
  * 使用RedisTemplate完成字典缓存操作
  *
- * @see DictDataCacheOperations
+ * @see DictDataCacheOperation
  */
-public class RedisDictDataCacheOperations implements DictDataCacheOperations {
+public class RedisDictDataCacheOperation implements DictDataCacheOperation {
 
     private RedisTemplate<String, String> redisTemplate;
 
@@ -25,7 +25,7 @@ public class RedisDictDataCacheOperations implements DictDataCacheOperations {
 
 
 
-    public RedisDictDataCacheOperations(RedisTemplate<String, String> redisTemplate) {
+    public RedisDictDataCacheOperation(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -73,7 +73,6 @@ public class RedisDictDataCacheOperations implements DictDataCacheOperations {
         redisTemplate.delete(key);
         return size;
     }
-
 
 
 

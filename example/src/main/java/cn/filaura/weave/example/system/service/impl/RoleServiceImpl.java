@@ -9,7 +9,6 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -25,12 +24,17 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    public List<Role> listRoleByIds(List<Long> ids) {
+        return roleMapper.listRoleByIds(ids);
+    }
+
+    @Override
     public String getSupportedTable() {
         return TableNames.ROLE;
     }
 
     @Override
-    public Map<Object, Map<String, Object>> queryRefData(List<Long> ids) {
-        return roleMapper.queryRefData(ids);
+    public List<Role> queryRefData(List<Long> ids) {
+        return listRoleByIds(ids);
     }
 }

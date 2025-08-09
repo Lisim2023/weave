@@ -4,7 +4,6 @@ import java.util.Collection;
 
 /**
  * 引用数据缓存接口
- * <p>根据提供的参数查询需要的数据，并将结果封装成指定的格式。
  */
 public interface RefDataCache {
 
@@ -13,6 +12,7 @@ public interface RefDataCache {
      * @param refInfo 引用信息对象
      */
     void cacheRef(RefInfo refInfo);
+
 
     /**
      * 加载引用数据

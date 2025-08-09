@@ -1,6 +1,7 @@
 package cn.filaura.weave.example.system.entity;
 
 
+import cn.filaura.weave.annotation.Mapping;
 import cn.filaura.weave.annotation.Dict;
 import cn.filaura.weave.annotation.Ref;
 import cn.filaura.weave.annotation.Cascade;
@@ -23,9 +24,9 @@ public class Menu {
 
     private String title;
 
-    @Ref(table = TableNames.MENU, columns = MenuColumns.TITLE)
+    @Ref(table = TableNames.MENU, mappings = @Mapping(column = MenuColumns.TITLE, property = "parentTitle"))
     private Long parentId;
-    private String parentIdRefTitle;
+    private String parentTitle;
 
     private Double orderNum;
 
@@ -48,23 +49,22 @@ public class Menu {
     @Cascade
     private List<Menu> children;
 
-    @Ref(table = TableNames.USER, columns = UserColumns.NICKNAME)
+    @Ref(table = TableNames.USER, mappings = @Mapping(column = UserColumns.NICKNAME, property = "createByUsername"))
     private String createBy;
-    private String createByRefNickname;
+    private String createByUsername;
 
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
-    @Ref(table = TableNames.USER, columns = UserColumns.NICKNAME)
+    @Ref(table = TableNames.USER, mappings = @Mapping(column = UserColumns.NICKNAME, property = "updateByUsername"))
     private String updateBy;
-    private String updateByRefNickname;
+    private String updateByUsername;
 
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private Date updateTime;
 
     private Integer delFlag;
-
 
 }

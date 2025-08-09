@@ -7,9 +7,10 @@ import java.util.Map;
 
 /**
  * 字典缓存操作接口
- * <p>提供字典数据的存储、加载和删除功能。
+ *
+ * @see RedisDictDataCacheOperation
  */
-public interface DictDataCacheOperations {
+public interface DictDataCacheOperation {
 
     /**
      * 缓存字典数据

@@ -4,10 +4,10 @@ package cn.filaura.weave.dict;
 
 import cn.filaura.weave.AbstractWeaver;
 import cn.filaura.weave.AnnotatedFieldExtractor;
-import cn.filaura.weave.BeanAccessor;
 import cn.filaura.weave.MapUtils;
 import cn.filaura.weave.annotation.Dict;
 import cn.filaura.weave.exception.DictDataNotFoundException;
+import cn.filaura.weave.type.ConvertUtil;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -23,12 +23,6 @@ public class DictWeaver extends AbstractWeaver {
 
     /** 属性名后缀 */
     protected String fieldNameSuffix = "Text";
-
-
-
-    public DictWeaver(BeanAccessor beanAccessor) {
-        super(beanAccessor);
-    }
 
 
 
@@ -82,7 +76,9 @@ public class DictWeaver extends AbstractWeaver {
                 }
 
                 String dictValue = translate(targetFieldValue, dictInfo, this::resolveDictValue);
-                beanAccessor.setProperty(bean, field.getName(), dictValue);
+                Class<?> propertyType = beanAccessor.getPropertyType(bean, field.getName());
+                Object convert = ConvertUtil.convert(dictValue, propertyType);
+                beanAccessor.setProperty(bean, field.getName(), convert);
             }
         });
     }
@@ -153,7 +149,7 @@ public class DictWeaver extends AbstractWeaver {
 
     private String getTargetFieldName(Field dictField) {
         Dict dict = dictField.getAnnotation(Dict.class);
-        String target = dict.targetField();
+        String target = dict.property();
         if (target == null || target.isEmpty()) {
             return dictField.getName() + fieldNameSuffix;
         }

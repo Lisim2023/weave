@@ -3,13 +3,15 @@ package cn.filaura.weave.ref;
 
 
 import cn.filaura.weave.*;
-import cn.filaura.weave.annotation.Bind;
+import cn.filaura.weave.annotation.Mapping;
 import cn.filaura.weave.annotation.Ref;
 import cn.filaura.weave.exception.BeanAccessException;
 import cn.filaura.weave.exception.RefDataNotFoundException;
+import cn.filaura.weave.exception.WeaveException;
+import cn.filaura.weave.type.ConvertUtil;
 
 
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,23 +20,11 @@ public class RefWeaver extends AbstractWeaver {
 
     protected static final AnnotatedFieldExtractor REF_FIELD_EXTRACTOR = new AnnotatedFieldExtractor(Ref.class);
 
-    /** 主键值分隔符 */
-    protected String delimiter = ",";
-
-    /** 自动推断目标属性名称时使用的中缀 */
-    protected String fieldNameInfix = "Ref";
+    /** 全局主键名 */
+    private String globalPrimaryKey = "id";
 
     /** 当被引用的字段值为null时，展示此字符 */
-    protected String nullDisplayText = "null";
-
-    /** 当被引用的数据记录不存在时的处理方式，默认拋出异常 */
-    protected MissingReferenceBehavior missingReferenceBehavior = MissingReferenceBehavior.ThrowException;
-
-
-
-    public RefWeaver(BeanAccessor beanAccessor) {
-        super(beanAccessor);
-    }
+    private String nullDisplayText = "null";
 
 
 
@@ -42,6 +32,7 @@ public class RefWeaver extends AbstractWeaver {
         Map<String, RefInfo> refInfoMap = new HashMap<>();
         collectRefMetadata(beans, refInfoMap);
         collectFieldValues(beans, refInfoMap);
+        removeIncompleteRefInfo(refInfoMap);
         return refInfoMap;
     }
 
@@ -49,123 +40,199 @@ public class RefWeaver extends AbstractWeaver {
         recursive(beans, bean -> {
             Field[] refFields = REF_FIELD_EXTRACTOR.getAnnotatedFields(bean.getClass());
             for (Field field : refFields) {
-                Ref ref = field.getAnnotation(Ref.class);
-                String mapKey = buildRefInfoMapKey(ref.table(), ref.key());
-                RefInfo refInfo = refInfoMap.get(mapKey);
-                if (refInfo == null || refInfo.getResults() == null) {
-                    throw new RefDataNotFoundException(dataNotFoundMessage(ref.table(), ref.key()));
-                }
-
-                String targetBeanName = ref.targetBean();
-                boolean isTargetBeanSpecified = targetBeanName != null && !targetBeanName.isEmpty();
-                Object targetObj;
-                if (isTargetBeanSpecified) {
-                    targetObj = beanAccessor.getProperty(bean, targetBeanName, GetMode.INIT_IF_NULL);
-                    if (targetObj == null) {
-                        throw new BeanAccessException("Error reading property: "
-                                + targetBeanName + " in class " + bean.getClass().getName());
-                    }
-                }else {
-                    targetObj = bean;
-                }
-
-                String fieldName = field.getName();
-                String fieldValue = getFieldValue(bean, fieldName);
-                if (fieldValue == null || fieldValue.isEmpty()) {
+                Object fieldValue = beanAccessor.getProperty(bean, field.getName());
+                if (fieldValue == null) {
                     continue;
                 }
 
-                Map<String, String> columnToFieldMap = buildColumnFieldMapping(ref, fieldName);
+                Ref ref = field.getAnnotation(Ref.class);
+                String compositeKey = buildRefInfoMapKey(ref);
+                RefInfo refInfo = refInfoMap.get(compositeKey);
+                if (refInfo == null || refInfo.getResults() == null) {
+                    throw new RefDataNotFoundException(dataNotFoundMessage(getTableName(ref), getKeyName(ref)));
+                }
 
-                boolean isMulti = fieldValue.contains(delimiter);
-                if (isMulti) {
-                    String[] splitValues = fieldValue.split(delimiter);
-                    List<Map<String, Object>> records = getRecords(refInfo, splitValues);
-
-                    Map<String, String> mappedProperties = extractMappedProperties(columnToFieldMap,
-                            columnName -> records.stream()
-                                    .map(record -> safeToString(record.get(columnName)))
-                                    .collect(Collectors.joining(delimiter)));
-                    mappedProperties.forEach((k, v) -> {
-                        beanAccessor.setProperty(targetObj, k, v, SetMode.ENFORCE_EXISTING);
-                    });
+                Map<String, Object> results = refInfo.getResults();
+                Class<?> fieldType = field.getType();
+                if (Collection.class.isAssignableFrom(fieldType) || fieldType.isArray()) {
+                    Collection<String> keyValues = convertToKeyValues(fieldValue);
+                    List<Object> records = keyValues.stream()
+                            .map(keyValue -> fetchRecord(results, keyValue, ref))
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                    handleCollectionCase(bean, ref, records);
 
                 } else {
-                    Map<String, Object> record = getRecord(refInfo, fieldValue);
-                    if (record.isEmpty()) {
-                        continue;
-                    }
-
-                    Map<String, String> mappedProperties = extractMappedProperties(columnToFieldMap,
-                            columnName -> safeToString(record.get(columnName)));
-                    mappedProperties.forEach((k, v) -> {
-                        beanAccessor.setProperty(targetObj, k, v, SetMode.ENFORCE_EXISTING);
-                    });
-
-                    if (isTargetBeanSpecified) {
-                        Map<String, String> unmappedProperties =
-                                extractUnmappedProperties(record, columnToFieldMap.keySet());
-                        unmappedProperties.forEach((k, v) -> {
-                            beanAccessor.setProperty(targetObj, k, v, SetMode.SKIP_IF_ABSENT);
-                        });
+                    String keyValue = String.valueOf(fieldValue);
+                    Object record = fetchRecord(results, keyValue, ref);
+                    if (record != null) {
+                        handleSingleCase(bean, ref, record);
                     }
                 }
             }
         });
     }
 
-    private Map<String, String> extractUnmappedProperties(Map<String, Object> record, Set<String> excludedColumns) {
-        Map<String, String> unMapped = new HashMap<>();
-        for (String key : record.keySet()) {
-            if (!excludedColumns.contains(key)) {
-                unMapped.put(key, safeToString(record.get(key)));
+    private Object fetchRecord(Map<String, Object> results, String keyValue, Ref ref) {
+        Object record = results.get(keyValue);
+        if (record == null && !ref.ignoreMissing()) {
+            throw new RefDataNotFoundException(dataNotFoundMessage(getTableName(ref), getKeyName(ref), keyValue));
+        }
+        return record;
+    }
+
+    private void handleCollectionCase(Object bean, Ref ref, List<Object> records) throws BeanAccessException {
+        if (ref.mapTo().isEmpty()) {
+            throw new WeaveException("Collection type requires mapTo parameter to be specified");
+        }
+        Object resultCollection = convertResultsToFieldType(bean, ref, records);
+        beanAccessor.setProperty(bean, ref.mapTo(), resultCollection);
+    }
+
+    private Object convertResultsToFieldType(Object bean, Ref ref, List<Object> records) {
+        if (records.isEmpty()) return null;
+
+        Class<?> targetType = beanAccessor.getPropertyType(bean, ref.mapTo());
+        if (targetType.isArray()) {
+            Class<?> compType = targetType.getComponentType();
+            Object array = Array.newInstance(compType, records.size());
+            for (int i = 0; i < records.size(); i++) {
+                Object element = adaptRecordToBean(records.get(i), compType, ref);
+                Array.set(array, i, element);
+            }
+            return array;
+
+        } else if (Collection.class.isAssignableFrom(targetType)) {
+            Collection<Object> collection = createCollectionInstance(targetType);
+            Class<?> genericType = beanAccessor.getCollectionGenericType(bean, ref.mapTo());
+            for (Object record : records) {
+                Object element = adaptRecordToBean(record, genericType, ref);
+                collection.add(element);
+            }
+            return collection;
+        }
+
+        throw new WeaveException("Unsupported collection type: " + targetType);
+    }
+
+    private void handleSingleCase(Object bean, Ref ref, Object record) throws BeanAccessException {
+        if (record == null) return;
+
+        if (ref.mapTo().isEmpty()) {
+            injectRefData(bean, ref, record);
+        } else {
+            Object target = beanAccessor.getProperty(bean, ref.mapTo());
+            if (target == null) {
+                Class<?> propertyType = beanAccessor.getPropertyType(bean, ref.mapTo());
+                target = adaptRecordToBean(record, propertyType, ref);
+                beanAccessor.setProperty(bean, ref.mapTo(), target);
+            }else {
+                injectRefData(target, ref, record);
+            }
+        }
+    }
+
+    private Object adaptRecordToBean(Object record, Class<?> beanClass, Ref ref) {
+        if (record instanceof Map) {
+            Object newBean = createBeanInstance(beanClass);
+            injectRefData(newBean, ref, record);
+            return newBean;
+        }else {
+            return record;
+        }
+    }
+
+    private void injectRefData(Object mapTarget, Ref ref, Object record) {
+        Map<String, Object> mappedProperties = extractMappedProperties(ref, columnName -> getDataFromRecord(record, columnName));
+        if (record instanceof Map) {
+            injectPropertiesWithConvert(mapTarget, mappedProperties, false);
+            if (!ref.mapTo().isEmpty()) {
+                Map<String, Object> unmappedProperties = extractUnmappedProperties((Map<String, Object>) record, mappedProperties.keySet());
+                injectPropertiesWithConvert(mapTarget, unmappedProperties, true);
+            }
+        }else {
+            mappedProperties.forEach((name, value) -> {
+                beanAccessor.setProperty(mapTarget, name, value);
+            });
+        }
+    }
+
+    private void injectPropertiesWithConvert(Object bean, Map<String, Object> properties, boolean skipIfAbsent) {
+        properties.forEach((name, value) -> {
+            try {
+                Class<?> propertyType = beanAccessor.getPropertyType(bean, name);
+                Object convert = ConvertUtil.convert(safeToString(value), propertyType);
+                beanAccessor.setProperty(bean, name, convert);
+            }catch (BeanAccessException e) {
+                if (skipIfAbsent) {
+                    return;
+                }
+                throw e;
+            }
+        });
+    }
+
+    private Object getDataFromRecord(Object record, String columnName) {
+        if (record instanceof Map) {
+            return ((Map<?, ?>) record).get(columnName);
+        }
+        return beanAccessor.getProperty(record, columnName);
+    }
+
+    // Helper methods
+    private Collection<String> convertToKeyValues(Object fieldValue) {
+        if (fieldValue == null) return Collections.emptyList();
+        if (fieldValue instanceof Collection) {
+            return ((Collection<?>) fieldValue).stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.toList());
+        } else if (fieldValue.getClass().isArray()) {
+            int length = Array.getLength(fieldValue);
+            List<String> list = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
+                list.add(String.valueOf(Array.get(fieldValue, i)));
+            }
+            return list;
+        }
+        throw new WeaveException("Unsupported collection type: " + fieldValue.getClass());
+    }
+
+    private Object createBeanInstance(Class<?> beanClass) {
+        try {
+            Constructor<?> constructor = beanClass.getDeclaredConstructor();
+            return constructor.newInstance();
+        } catch (Exception e) {
+            throw new WeaveException("Failed to instantiate object: " + beanClass.getSimpleName() +
+                    " requires a public no-argument constructor", e);
+        }
+    }
+
+    private Collection<Object> createCollectionInstance(Class<?> collectionType) {
+        if (List.class.isAssignableFrom(collectionType)) return new ArrayList<>();
+        if (Set.class.isAssignableFrom(collectionType)) return new HashSet<>();
+        throw new WeaveException("Unsupported collection type: " + collectionType);
+    }
+
+    private Map<String, Object> extractUnmappedProperties(Map<String, Object> record,
+                                                          Set<String> excludedColumns) {
+        Map<String, Object> unMapped = new HashMap<>();
+        for (Object key : record.keySet()) {
+            String keyString = key.toString();
+            if (!excludedColumns.contains(keyString)) {
+                unMapped.put(keyString, record.get(keyString));
             }
         }
         return unMapped;
     }
 
-    private Map<String, String> extractMappedProperties(Map<String, String> columnToFieldMap,
-                                                        Function<String, String> valueGetter) {
-        Map<String, String> mapped = new HashMap<>();
-        for (String columnName : columnToFieldMap.keySet()) {
-            String fieldName = columnToFieldMap.get(columnName);
-            String key = fieldName == null ? columnName : fieldName;
-            String value = valueGetter.apply(columnName);
-            mapped.put(key, value);
+    private Map<String, Object> extractMappedProperties(Ref ref,
+                                                        Function<String, Object> valueGetter) {
+        Map<String, Object> mapped = new HashMap<>();
+        for (Mapping mapping : ref.mappings()) {
+            Object value = valueGetter.apply(mapping.column());
+            mapped.put(mapping.property(), value);
         }
         return mapped;
-    }
-
-    private Map<String, Object> getRecord(RefInfo refInfo, String value) {
-        Map<String, Object> record = refInfo.getResults().get(value);
-        if (record == null) {
-            if (MissingReferenceBehavior.ThrowException.equals(missingReferenceBehavior)) {
-                throw new RefDataNotFoundException(dataNotFoundMessage(refInfo.getTable(), refInfo.getKey(), value));
-            }
-            return new HashMap<>();
-        }
-
-        return record;
-    }
-
-    private List<Map<String, Object>> getRecords(RefInfo refInfo, String[] values) {
-        List<Map<String, Object>> maps = new ArrayList<>();
-        for (String value : values) {
-            maps.add(getRecord(refInfo, value));
-        }
-        return maps;
-    }
-
-    private Map<String, String> buildColumnFieldMapping(Ref ref, String rawName) {
-        Map<String, String> map = new HashMap<>();
-        for (String column : ref.columns()) {
-            String derivedFieldName = rawName + fieldNameInfix + capitalize(column);
-            map.put(column, derivedFieldName);
-        }
-        for (Bind binding : ref.bindings()) {
-            map.put(binding.column(), binding.targetField());
-        }
-        return map;
     }
 
     private void collectRefMetadata(Object beans, Map<String, RefInfo> refInfoMap) {
@@ -173,14 +240,13 @@ public class RefWeaver extends AbstractWeaver {
         for (Class<?> aClass : allClasses) {
             for (Field field : REF_FIELD_EXTRACTOR.getAnnotatedFields(aClass)) {
                 Ref ref = field.getAnnotation(Ref.class);
+                String table = getTableName(ref);
+                String key = getKeyName(ref);
                 RefInfo refInfo = refInfoMap.computeIfAbsent(
-                        buildRefInfoMapKey(ref.table(), ref.key()),
-                        n -> new RefInfo(ref.table(), ref.key())
+                        buildRefInfoMapKey(ref),
+                        n -> new RefInfo(table, key)
                 );
-                for (String column : ref.columns()) {
-                    refInfo.getColumns().add(column);
-                }
-                for (Bind binding : ref.bindings()) {
+                for (Mapping binding : ref.mappings()) {
                     refInfo.getColumns().add(binding.column());
                 }
             }
@@ -190,30 +256,67 @@ public class RefWeaver extends AbstractWeaver {
     private void collectFieldValues(Object beans, Map<String, RefInfo> refInfoMap) {
         recursive(beans, bean -> {
             for (Field field : REF_FIELD_EXTRACTOR.getAnnotatedFields(bean.getClass())) {
-                String valueString = getFieldValue(bean, field.getName());
-                if (valueString == null || valueString.isEmpty()){
+                Object fieldValue = beanAccessor.getProperty(bean, field.getName());
+                if (fieldValue == null) {
                     continue;
                 }
 
                 Ref ref = field.getAnnotation(Ref.class);
+                String table = getTableName(ref);
+                String key = getKeyName(ref);
                 RefInfo refInfo = refInfoMap.computeIfAbsent(
-                        buildRefInfoMapKey(ref.table(), ref.key()),
-                        n -> new RefInfo(ref.table(), ref.key())
+                        buildRefInfoMapKey(ref),
+                        n -> new RefInfo(table, key)
                 );
 
-                boolean isMulti = valueString.contains(delimiter);
-                if (isMulti) {
-                    String[] splitValues = valueString.split(delimiter);
-                    refInfo.getKeyValues().addAll(Arrays.asList(splitValues));
-                }else {
-                    refInfo.getKeyValues().add(valueString);
+                if (fieldValue.getClass().isArray()) {  // 处理数组类型
+                    int length = Array.getLength(fieldValue);
+                    for (int i = 0; i < length; i++) {
+                        Object element = Array.get(fieldValue, i);
+                        refInfo.getKeyValues().add(String.valueOf(element));
+                    }
+                } else if (fieldValue instanceof Collection) {  // 处理集合类型
+                    Collection<?> collection = (Collection<?>) fieldValue;
+                    for (Object element : collection) {
+                        refInfo.getKeyValues().add(String.valueOf(element));
+                    }
+                } else {  // 处理其他类型
+                    refInfo.getKeyValues().add(String.valueOf(fieldValue));
                 }
             }
         });
     }
 
+    private void removeIncompleteRefInfo(Map<String, RefInfo> refInfoMap) {
+        Iterator<Map.Entry<String, RefInfo>> iterator = refInfoMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, RefInfo> entry = iterator.next();
+            RefInfo refInfo = entry.getValue();
+            Set<String> keyValues = refInfo.getKeyValues();
+
+            // 检查 keyValues 是否为 null 或空集合
+            if (keyValues == null || keyValues.isEmpty()) {
+                iterator.remove();  // 安全移除当前条目
+            }
+        }
+    }
+
     private String safeToString(Object object) {
         return object == null ? nullDisplayText : object.toString();
+    }
+
+    private String getTableName(Ref ref) {
+        return ref.table();
+    }
+
+    private String getKeyName(Ref ref) {
+        return ref.key().isEmpty() ? globalPrimaryKey : ref.key();
+    }
+
+    private String buildRefInfoMapKey(Ref ref) {
+        String table = getTableName(ref);
+        String key = getKeyName(ref);
+        return buildRefInfoMapKey(table, key);
     }
 
     private String buildRefInfoMapKey(String table, String key) {
@@ -240,22 +343,6 @@ public class RefWeaver extends AbstractWeaver {
 
 
 
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    public void setDelimiter(String delimiter) {
-        this.delimiter = delimiter;
-    }
-
-    public String getFieldNameInfix() {
-        return fieldNameInfix;
-    }
-
-    public void setFieldNameInfix(String fieldNameInfix) {
-        this.fieldNameInfix = fieldNameInfix;
-    }
-
     public String getNullDisplayText() {
         return nullDisplayText;
     }
@@ -264,11 +351,12 @@ public class RefWeaver extends AbstractWeaver {
         this.nullDisplayText = nullDisplayText;
     }
 
-    public MissingReferenceBehavior getMissingReferenceBehavior() {
-        return missingReferenceBehavior;
+    public String getGlobalPrimaryKey() {
+        return globalPrimaryKey;
     }
 
-    public void setMissingReferenceBehavior(MissingReferenceBehavior missingReferenceBehavior) {
-        this.missingReferenceBehavior = missingReferenceBehavior;
+    public void setGlobalPrimaryKey(String globalPrimaryKey) {
+        this.globalPrimaryKey = globalPrimaryKey;
     }
+
 }

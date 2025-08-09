@@ -6,11 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>用于{@link Ref#bindings()}参数，用来指定列与属性的映射关系。
+ * <p>用于{@link Ref#mappings()}参数，用来指定列与属性的映射关系。
  */
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Bind {
+public @interface Mapping {
 
     /**
      * 数据表中的列名
@@ -22,5 +22,6 @@ public @interface Bind {
      * 对象的属性名
      * @return 属性名
      */
-    String targetField();
+    String property();
+
 }

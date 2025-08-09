@@ -2,6 +2,7 @@ package cn.filaura.weave;
 
 import cn.filaura.weave.annotation.Cascade;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashSet;
@@ -12,13 +13,7 @@ public abstract class AbstractWeaver {
 
     protected static final AnnotatedFieldExtractor CASCADE_FIELD_EXTRACTOR = new AnnotatedFieldExtractor(Cascade.class);
 
-    protected final BeanAccessor beanAccessor;
-
-
-
-    public AbstractWeaver(BeanAccessor beanAccessor) {
-        this.beanAccessor = beanAccessor;
-    }
+    protected BeanAccessor beanAccessor = new PropertyDescriptorBeanAccessor();
 
 
 
@@ -32,6 +27,7 @@ public abstract class AbstractWeaver {
         if (beans == null) {
             return;
         }
+
         if (beans instanceof Collection) {
             for (Object bean : (Collection<?>)beans) {
                 recursive(bean, nodeProcessor);
@@ -39,10 +35,20 @@ public abstract class AbstractWeaver {
             return;
         }
 
+        if (beans.getClass().isArray()) {
+            int length = Array.getLength(beans);
+            for (int i = 0; i < length; i++) {
+                Object element = Array.get(beans, i);
+                recursive(element, nodeProcessor);
+            }
+            return;
+        }
+
         nodeProcessor.accept(beans);
         Field[] fields = CASCADE_FIELD_EXTRACTOR.getAnnotatedFields(beans.getClass());
         for (Field field : fields) {
-            recursive(beanAccessor.getProperty(beans, field.getName()), nodeProcessor);
+            Object cascade = beanAccessor.getProperty(beans, field.getName());
+            recursive(cascade, nodeProcessor);
         }
     }
 
@@ -60,4 +66,13 @@ public abstract class AbstractWeaver {
         return sb.toString();
     }
 
+
+
+    public BeanAccessor getBeanAccessor() {
+        return beanAccessor;
+    }
+
+    public void setBeanAccessor(BeanAccessor beanAccessor) {
+        this.beanAccessor = beanAccessor;
+    }
 }

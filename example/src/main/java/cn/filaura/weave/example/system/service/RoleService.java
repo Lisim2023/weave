@@ -8,4 +8,6 @@ import java.util.List;
 public interface RoleService extends RefService {
 
     List<Role> selectRoleList();
+
+    List<Role> listRoleByIds(List<Long> ids);
 }

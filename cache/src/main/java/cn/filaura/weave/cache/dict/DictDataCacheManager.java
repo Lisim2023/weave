@@ -21,21 +21,21 @@ import java.util.stream.Collectors;
 public class DictDataCacheManager implements DictDataCache {
 
     /** 主缓存键 */
-    private String dictCacheKey = "weave:dict";
+    private String dictStorageKey = "weave:dict";
 
     private final Serializer serializer;
-    private final DictDataCacheOperations dictDataCacheOperations;
+    private final DictDataCacheOperation dictDataCacheOperation;
 
 
 
     /**
      * 构造函数
      * @param serializer 序列化器
-     * @param dictDataCacheOperations 字典缓存处理器
+     * @param dictDataCacheOperation 字典缓存处理器
      */
-    public DictDataCacheManager(Serializer serializer, DictDataCacheOperations dictDataCacheOperations) {
+    public DictDataCacheManager(Serializer serializer, DictDataCacheOperation dictDataCacheOperation) {
         this.serializer = serializer;
-        this.dictDataCacheOperations = dictDataCacheOperations;
+        this.dictDataCacheOperation = dictDataCacheOperation;
     }
 
 
@@ -50,7 +50,7 @@ public class DictDataCacheManager implements DictDataCache {
             return;
         }
         String serialized = serializer.serialize(dictInfo.getData());
-        dictDataCacheOperations.cacheDict(dictCacheKey, dictInfo.getCode(), serialized);
+        dictDataCacheOperation.cacheDict(dictStorageKey, dictInfo.getCode(), serialized);
     }
 
     /**
@@ -71,7 +71,7 @@ public class DictDataCacheManager implements DictDataCache {
                 dataMap.put(dictInfo.getCode(), serialized);
             }
         }
-        dictDataCacheOperations.cacheDict(dictCacheKey, dataMap);
+        dictDataCacheOperation.cacheDict(dictStorageKey, dataMap);
     }
 
     /**
@@ -84,7 +84,7 @@ public class DictDataCacheManager implements DictDataCache {
         if (dictCode == null || dictCode.isEmpty()) {
             return null;
         }
-        String serializedData = dictDataCacheOperations.loadDict(dictCacheKey, dictCode);
+        String serializedData = dictDataCacheOperation.loadDict(dictStorageKey, dictCode);
         if (serializedData == null) {
             return null;
         }
@@ -104,7 +104,7 @@ public class DictDataCacheManager implements DictDataCache {
             return Collections.emptyList();
         }
 
-        List<String> serializedData = dictDataCacheOperations.loadDict(dictCacheKey, dictCodes);
+        List<String> serializedData = dictDataCacheOperation.loadDict(dictStorageKey, dictCodes);
         List<DictInfo> dictInfos = new ArrayList<>();
         int index = 0;
         for (String dictCode : dictCodes) {
@@ -122,7 +122,7 @@ public class DictDataCacheManager implements DictDataCache {
      * @return 所有字典信息的列表
      */
     public List<DictInfo> loadAllDict() {
-        Map<String, String> allSerializedData = dictDataCacheOperations.loadAllDict(dictCacheKey);
+        Map<String, String> allSerializedData = dictDataCacheOperation.loadAllDict(dictStorageKey);
         if (allSerializedData == null || allSerializedData.isEmpty()) {
             return Collections.emptyList();
         }
@@ -145,7 +145,7 @@ public class DictDataCacheManager implements DictDataCache {
         if (dictCode == null || dictCode.isEmpty()) {
             return 0;
         }
-        return dictDataCacheOperations.removeDict(dictCacheKey, dictCode);
+        return dictDataCacheOperation.removeDict(dictStorageKey, dictCode);
     }
 
     /**
@@ -158,7 +158,7 @@ public class DictDataCacheManager implements DictDataCache {
         if (dictCodes == null || dictCodes.isEmpty()) {
             return 0;
         }
-        return dictDataCacheOperations.removeDict(dictCacheKey, dictCodes);
+        return dictDataCacheOperation.removeDict(dictStorageKey, dictCodes);
     }
 
     /**
@@ -167,7 +167,7 @@ public class DictDataCacheManager implements DictDataCache {
      * @return 被移除的缓存总数
      */
     public long removeAllDict() {
-        return dictDataCacheOperations.removeAllDict(dictCacheKey);
+        return dictDataCacheOperation.removeAllDict(dictStorageKey);
     }
 
 
@@ -176,24 +176,24 @@ public class DictDataCacheManager implements DictDataCache {
      * 获取字典缓存的主键
      * @return 当前设置的主键
      */
-    public String getDictCacheKey() {
-        return dictCacheKey;
+    public String getDictStorageKey() {
+        return dictStorageKey;
     }
 
     /**
      * 设置字典缓存的主键
-     * @param dictCacheKey 新的主键
+     * @param dictStorageKey 新的主键
      */
-    public void setDictCacheKey(String dictCacheKey) {
-        this.dictCacheKey = dictCacheKey;
+    public void setDictStorageKey(String dictStorageKey) {
+        this.dictStorageKey = dictStorageKey;
     }
 
     public Serializer getSerializer() {
         return serializer;
     }
 
-    public DictDataCacheOperations getDictCacheHandler() {
-        return dictDataCacheOperations;
+    public DictDataCacheOperation getDictCacheHandler() {
+        return dictDataCacheOperation;
     }
 
 }

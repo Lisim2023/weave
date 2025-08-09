@@ -6,24 +6,37 @@
     <parent>
         <groupId>cn.filaura</groupId>
         <artifactId>weave-parent</artifactId>
-        <version>1.0.1</version>
+        <version>1.1.0</version>
     </parent>
 
     <artifactId>weave-example</artifactId>
+    <name>weave-example</name>
+    <description>example for weave</description>
 
     <dependencies>
-        <!-- SpringBoot 3 的项目需要将其中的redis依赖替换为新版本           -->
         <dependency>
             <groupId>cn.filaura</groupId>
-            <artifactId>weave-cache-redis</artifactId>
-            <version>1.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.data</groupId>
-                    <artifactId>spring-data-redis</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>weave-spring-boot-autoconfigure</artifactId>
+            <version>1.1.0</version>
         </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>cn.filaura</groupId>-->
+<!--            <artifactId>weave-cache-redis</artifactId>-->
+<!--            <version>1.1.0</version>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>com.fasterxml.jackson.core</groupId>-->
+<!--            <artifactId>jackson-databind</artifactId>-->
+<!--            <version>2.14.2</version>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-data-redis</artifactId>-->
+<!--            <version>3.3.2</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>com.mysql</groupId>
@@ -46,13 +59,7 @@
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>3.0.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-            <version>3.3.2</version>
+            <version>3.0.4</version>
         </dependency>
 
         <dependency>

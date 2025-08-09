@@ -11,4 +11,6 @@ public interface MenuService extends RefService {
 
     List<Menu> tree();
 
+    List<Menu> listMenuByIes(List<Long> ids);
+
 }

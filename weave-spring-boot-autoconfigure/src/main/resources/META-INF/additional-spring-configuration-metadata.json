@@ -1,0 +1,45 @@
+
+{
+  "properties": [
+    {
+      "name": "weave.disable-weave-aspect",
+      "type": "java.lang.Boolean",
+      "description": "是否禁用WeaveAspect自动配置，默认为false表示启用",
+      "defaultValue": false
+    },
+    {
+      "name": "weave.disable-weave-reverse-aspect",
+      "type": "java.lang.Boolean",
+      "description": "是否禁用WeaveReverseAspect自动配置，默认为false表示启用",
+      "defaultValue": false
+    }
+  ],
+  "hints": [
+    {
+      "name": "weave.disable-weave-aspect",
+      "values": [
+        {
+          "value": true,
+          "description": "禁用@Weave切面"
+        },
+        {
+          "value": false,
+          "description": "启用@Weave切面"
+        }
+      ]
+    },
+    {
+      "name": "weave.disable-weave-reverse-aspect",
+      "values": [
+        {
+          "value": true,
+          "description": "禁用@WeaveReverse切面"
+        },
+        {
+          "value": false,
+          "description": "启用@WeaveReverse切面"
+        }
+      ]
+    }
+  ]
+}

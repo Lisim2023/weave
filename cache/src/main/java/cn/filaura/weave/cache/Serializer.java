@@ -20,7 +20,7 @@ public interface Serializer {
      * @return 序列化后的字符串
      * @throws SerializationException 序列化过程中出现异常时，封装并抛出此异常，包含错误详情信息
      */
-    String serialize(Map<String, ?> data) throws SerializationException;
+    String serialize(Object data) throws SerializationException;
 
     /**
      * 将字符串反序列化为Map类型
@@ -30,4 +30,14 @@ public interface Serializer {
      * @throws SerializationException 序列化过程中出现异常时，封装并抛出此异常，包含错误详情信息
      */
     Map<String, String> deSerialize(String data) throws SerializationException;
+
+    /**
+     * 将字符串反序列化为指定的类型
+     * @param data 待反序列化的字符串
+     * @param tClass 目标类型
+     * @return 反序列化后的数据对象
+     * @param <T> 类型泛型
+     * @throws SerializationException 序列化过程中出现异常时，封装并抛出此异常
+     */
+    <T> T deSerialize(String data, Class<T> tClass) throws SerializationException;
 }

@@ -5,7 +5,6 @@ import java.util.Map;
 
 /**
  * 字典数据提供接口
- * <p>字典助手通过此接口获取数据
  */
 public interface DictDataProvider {
 

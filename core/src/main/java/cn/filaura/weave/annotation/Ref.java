@@ -35,17 +35,9 @@ public @interface Ref {
      * 要引用的列与目标属性的绑定规则数组（可选）。
      *
      * @return 列绑定规则数组
-     * @see Bind
+     * @see Mapping
      */
-    Bind[] bindings() default {};
-
-    /**
-     * 要引用的列名（可选）。
-     *
-     * <p>仅指定列名，列名对应的属性名根据规则自动生成（原属性名+中缀+列名）。
-     * @return 列名称数组
-     */
-    String[] columns() default {};
+    Mapping[] mappings() default {};
 
     /**
      * 指定目标JavaBean（可选）。
@@ -54,7 +46,10 @@ public @interface Ref {
      * <p>当此属性被设置时，会尝试将获取到的所有列的数据映射到目标对象的同名属性
      * @return 目标JavaBean的属性名
      */
-    String targetBean() default "";
+    String mapTo() default "";
+
+
+    boolean ignoreMissing() default false;
 
 }
 

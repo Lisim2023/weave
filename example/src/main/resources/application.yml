@@ -33,3 +33,21 @@ mybatis:
 
 
 
+weave:
+  disable-weave-aspect: false
+  disable-weave-reverse-aspect: false
+  dict:
+    delimiter: ','
+    field-name-suffix: 'Text'
+  ref:
+    global-primary-key: 'id'
+    null-display-text: 'null'
+  cache:
+    dict-storage-key: "weave:dict"
+    ref-storage-prefix: 'weave:ref'
+    ref-global-ttl: 86400
+    ref-random-ttl-offset: 300
+    ref-table-ttl:
+      sys_user: 3600    # 用户表缓存1小时
+      sys_role: 86400   # 角色表缓存1天
+      sys_dept: 1800    # 部门表缓存30分钟

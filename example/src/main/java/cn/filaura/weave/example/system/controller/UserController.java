@@ -1,7 +1,6 @@
 package cn.filaura.weave.example.system.controller;
 
 
-import cn.filaura.weave.dict.DictHelper;
 import cn.filaura.weave.example.system.entity.User;
 import cn.filaura.weave.example.system.service.UserService;
 
@@ -20,14 +19,16 @@ public class UserController {
     @Resource
     private UserService userService;
 
-    @Resource
-    private DictHelper dictHelper;
-
 
 
     @GetMapping("list")
     public List<User> selectUserList() {
         return userService.selectUserList();
+    }
+
+    @GetMapping("collectionRefTest")
+    public List<User> collectionRefTest() {
+        return userService.selectUsersWithRoleIds();
     }
 
     @GetMapping("reverseDictTest")
@@ -40,8 +41,7 @@ public class UserController {
         users.add(new User("男", "篮球,编程"));
         users.add(new User("女", "排球,5"));
         users.add(new User(null,null));
-
-        dictHelper.populateDictValue(users);
+        userService.saveUsers(users);
         return users;
     }
 

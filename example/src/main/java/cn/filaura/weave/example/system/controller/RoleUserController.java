@@ -24,4 +24,5 @@ public class RoleUserController {
     public List<RoleUser> selectRoleUserList() {
         return roleUserService.selectRoleUserList();
     }
+
 }

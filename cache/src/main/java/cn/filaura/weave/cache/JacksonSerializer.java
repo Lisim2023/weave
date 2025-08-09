@@ -30,7 +30,7 @@ public class JacksonSerializer implements Serializer {
 
 
     @Override
-    public String serialize(Map<String, ?> data) {
+    public String serialize(Object data) {
         try {
             return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
@@ -50,7 +50,17 @@ public class JacksonSerializer implements Serializer {
         }
     }
 
-
+    @Override
+    public <T> T deSerialize(String data, Class<T> tClass) {
+        if (data == null){
+            return null;
+        }
+        try {
+            return objectMapper.readValue(data, tClass);
+        } catch (JsonProcessingException e) {
+            throw new SerializationException(e.getMessage(), e);
+        }
+    }
 
     public ObjectMapper getObjectMapper() {
         return objectMapper;

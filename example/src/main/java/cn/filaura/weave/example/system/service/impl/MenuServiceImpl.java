@@ -9,7 +9,6 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class MenuServiceImpl implements MenuService {
@@ -42,12 +41,17 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    public List<Menu> listMenuByIes(List<Long> ids) {
+        return menuMapper.listMenuByIds(ids);
+    }
+
+    @Override
     public String getSupportedTable() {
         return TableNames.MENU;
     }
 
     @Override
-    public Map<Object, Map<String, Object>> queryRefData(List<Long> ids) {
-        return menuMapper.queryRefData(ids);
+    public List<Menu> queryRefData(List<Long> ids) {
+        return listMenuByIes(ids);
     }
 }

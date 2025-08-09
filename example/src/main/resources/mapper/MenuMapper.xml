@@ -30,7 +30,7 @@
         where del_flag = 0
     </select>
 
-    <select id="queryRefData" resultType="java.util.Map">
+    <select id="listMenuByIds" resultMap="MenuResult">
         select id, title
         from sys_menu
         where del_flag = 0

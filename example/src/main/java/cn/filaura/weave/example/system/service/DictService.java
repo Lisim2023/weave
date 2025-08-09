@@ -9,4 +9,7 @@ import java.util.List;
 public interface DictService extends RefService {
 
     List<SysDict> selectDictList();
+
+    List<SysDict> listDictByIds(List<Long> ids);
+
 }

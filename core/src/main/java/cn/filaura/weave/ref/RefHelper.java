@@ -2,7 +2,6 @@ package cn.filaura.weave.ref;
 
 
 import cn.filaura.weave.BeanAccessor;
-import cn.filaura.weave.PropertyDescriptorBeanAccessor;
 import cn.filaura.weave.annotation.Ref;
 import cn.filaura.weave.exception.BeanAccessException;
 import cn.filaura.weave.exception.ConvertException;
@@ -20,8 +19,9 @@ import java.util.Map;
  */
 public class RefHelper {
 
+    private final RefWeaver refWeaver = new RefWeaver();
+
     private final RefDataProvider refDataProvider;
-    private final RefWeaver refWeaver;
 
 
 
@@ -33,27 +33,10 @@ public class RefHelper {
     }
 
     /**
-     * @param refDataSource 引用数据源
-     * @param beanAccessor 属性访问器
-     */
-    public RefHelper(RefDataSource refDataSource, BeanAccessor beanAccessor) {
-        this(new DirectDataSourceRefDataProvider(refDataSource), beanAccessor);
-    }
-
-    /**
      * @param refDataProvider 引用数据提供接口实例
      */
     public RefHelper(RefDataProvider refDataProvider) {
-        this(refDataProvider, new PropertyDescriptorBeanAccessor());
-    }
-
-    /**
-     * @param refDataProvider 引用数据提供接口实例
-     * @param beanAccessor 属性访问器
-     */
-    public RefHelper(RefDataProvider refDataProvider, BeanAccessor beanAccessor) {
         this.refDataProvider = refDataProvider;
-        this.refWeaver = new RefWeaver(beanAccessor);
     }
 
 
@@ -79,38 +62,6 @@ public class RefHelper {
 
 
     /**
-     * 获取属性值分隔符
-     * @return 当前使用的分隔符
-     */
-    public String getDelimiter() {
-        return refWeaver.getDelimiter();
-    }
-
-    /**
-     * 设置属性值分隔符
-     * @param delimiter 新的分隔符
-     */
-    public void setDelimiter(String delimiter) {
-        refWeaver.setDelimiter(delimiter);
-    }
-
-    /**
-     * 获取属性名称中缀
-     * @return 当前使用的属性名中缀
-     */
-    public String getFieldNameInfix() {
-        return refWeaver.getFieldNameInfix();
-    }
-
-    /**
-     * 设置属性名中缀
-     * @param fieldNameInfix 新的属性名中缀
-     */
-    public void setFieldNameInfix(String fieldNameInfix) {
-        refWeaver.setFieldNameInfix(fieldNameInfix);
-    }
-
-    /**
      * 获取空值显示文本
      * @return 当前使用的空值占位文本
      */
@@ -126,19 +77,20 @@ public class RefHelper {
         refWeaver.setNullDisplayText(nullDisplayText);
     }
 
-    /**
-     * 设置当被引用的记录不存在时的处理方式
-     * @param missingReferenceBehavior 新的处理方式
-     */
-    public void setMissingReferenceBehavior(MissingReferenceBehavior missingReferenceBehavior) {
-        refWeaver.setMissingReferenceBehavior(missingReferenceBehavior);
+
+    public String getGlobalPrimaryKey() {
+        return refWeaver.getGlobalPrimaryKey();
     }
 
-    /**
-     * 获取当前设置的被引用的记录不存在时的处理方式
-     * @return 当前处理方式
-     */
-    public MissingReferenceBehavior getMissingReferenceBehavior() {
-        return refWeaver.getMissingReferenceBehavior();
+    public void setGlobalPrimaryKey(String globalPrimaryKey) {
+        refWeaver.setGlobalPrimaryKey(globalPrimaryKey);
+    }
+
+    public BeanAccessor getBeanAccessor() {
+        return refWeaver.getBeanAccessor();
+    }
+
+    public void setBeanAccessor(BeanAccessor beanAccessor) {
+        refWeaver.setBeanAccessor(beanAccessor);
     }
 }

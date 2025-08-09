@@ -6,9 +6,8 @@ import cn.filaura.weave.example.system.mapper.DictMapper;
 import cn.filaura.weave.example.system.service.DictService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.Map;
+
 
 @Service
 public class DictServiceImpl implements DictService {
@@ -24,13 +23,18 @@ public class DictServiceImpl implements DictService {
     }
 
     @Override
+    public List<SysDict> listDictByIds(List<Long> ids) {
+        return dictMapper.listDictByIds(ids);
+    }
+
+    @Override
     public String getSupportedTable() {
         return TableNames.DICT;
     }
 
     @Override
-    public Map<Object, Map<String, Object>> queryRefData(List<Long> ids) {
-        return dictMapper.queryRefData(ids);
+    public List<SysDict> queryRefData(List<Long> ids) {
+        return listDictByIds(ids);
     }
 
 }

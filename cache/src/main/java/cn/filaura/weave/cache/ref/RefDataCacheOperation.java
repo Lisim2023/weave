@@ -8,18 +8,29 @@ import java.util.Map;
 /**
  * 引用数据缓存操作接口
  *
- * @see RefDataCacheManager
+ * @see RedisRefDataCacheOperation
  */
-public interface RefDataCacheOperations {
+public interface RefDataCacheOperation {
+
 
     /**
-     * 缓存单个引用数据，并设置过期时间。
+     * 缓存类型信息到Hash结构
      *
-     * @param key 缓存的键
-     * @param record 供引用的数据
-     * @param seconds 过期时间（秒）
+     * @param hashKey  类型信息存储的Hash键
+     * @param field    Hash字段（格式：表名_主键名）
+     * @param type     类型全限定名
      */
-    void cacheRef(String key, String record, long seconds);
+    void cacheTypeInfo(String hashKey, String field, String type);
+
+    /**
+     * 从Hash结构中加载类型信息
+     *
+     * @param hashKey 类型信息存储的Hash键
+     * @param field   Hash字段（格式：表名_主键名）
+     * @return        类型全限定名，不存在时返回null
+     */
+    String loadTypeInfo(String hashKey, String field);
+
 
     /**
      * 批量缓存引用数据，并设置过期时间。

@@ -32,6 +32,6 @@ public @interface Dict {
      * <p>指定另一属性用于存储字典描述文本。如果未指定，则根据规则生成（原属性名+后缀）。
      * @return 目标属性名称
      */
-    String targetField() default "";
+    String property() default "";
 
 }
