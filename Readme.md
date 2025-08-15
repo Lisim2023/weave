@@ -146,7 +146,7 @@ private List<Role> roles;   // ← 自动填充角色列表
 
 ### 2. 配置数据源
 需要实现数据源接口为对应的模块提供数据，实现以下接口并配置为 Spring Bean即可：  
-- ##### 字典数据源：[DictDataSource](\core\src\main\java\cn\filaura\weave\dict\DictDataSource.java)
+- ##### 字典数据源：[DictDataSource](/core/src/main/java/cn/filaura/weave/dict/DictDataSource.java)
     ```java
     // 示例伪代码
     @Component
@@ -164,10 +164,10 @@ private List<Role> roles;   // ← 自动填充角色列表
         }
     }
     ```
-  完整的实现流程可参考：[DictDataSourceImpl](example\src\main\java\cn\filaura\weave\example\dict\DictDataSourceImpl.java)
+  完整的实现流程可参考：[DictDataSourceImpl](/example/src/main/java/cn/filaura/weave/example/dict/DictDataSourceImpl.java)
 
 
-- ##### 引用数据源：[RefDataSource](\core\src\main\java\cn\filaura\weave\ref\RefDataSource.java)
+- ##### 引用数据源：[RefDataSource](/core/src/main/java/cn/filaura/weave/ref/RefDataSource.java)
 
     ```java
     // 示例伪代码
@@ -187,7 +187,7 @@ private List<Role> roles;   // ← 自动填充角色列表
         }
     }
     ```
-  完整的实现流程可参考：[RefDataSource2](example\src\main\java\cn\filaura\weave\example\ref\RefDataSource2.java)  
+  完整的实现流程可参考：[RefDataSource2](/example/src/main/java/cn/filaura/weave/example/ref/RefDataSource2.java)  
   也可以用动态SQL实现，返回List<Map<String, Object>>即可。
 
 
@@ -231,8 +231,8 @@ weave:
 ## 扩展
 - #### 多数据源支持 
   实现以下接口以支持多数据源调度：  
-  字典：[DictDataProvider](\core\src\main\java\cn\filaura\weave\dict\DictDataProvider.java)  
-  引用：[RefDataProvider](\core\src\main\java\cn\filaura\weave\ref\RefDataProvider.java)  
+  字典：[DictDataProvider](/core/src/main/java/cn/filaura/weave/dict/DictDataProvider.java)  
+  引用：[RefDataProvider](/core/src/main/java/cn/filaura/weave/ref/RefDataProvider.java)  
   配置为SpringBean后自动生效。
 
 
@@ -241,16 +241,16 @@ weave:
   ```java
   ConvertUtil.register(MyType.class, new MyTypeConverter());
   ```
-  详见[ConvertUtil](core\src\main\java\cn\filaura\weave\type\ConvertUtil.java)。
+  详见[ConvertUtil](/core/src/main/java/cn/filaura/weave/type/ConvertUtil.java)。
 
 
 - #### 自定义序列化器
   用于缓存中对象的序列化/反序列化。  
-  实现[Serializer](cache\src\main\java\cn\filaura\weave\cache\Serializer.java)接口，并配置为SpringBean
+  实现[Serializer](/cache/src/main/java/cn/filaura/weave/cache/Serializer.java)接口，并配置为SpringBean
 
 
 - #### 自定义缓存操作
   非 Redis 缓存（如 Caffeine、Memcached），可实现以下接口：  
-  字典缓存操作：[DictDataCacheOperation](cache\src\main\java\cn\filaura\weave\cache\dict\DictDataCacheOperation.java)  
-  引用缓存操作：[RefDataCacheOperation](cache\src\main\java\cn\filaura\weave\cache\ref\RefDataCacheOperation.java)  
+  字典缓存操作：[DictDataCacheOperation](/cache/src/main/java/cn/filaura/weave/cache/dict/DictDataCacheOperation.java)  
+  引用缓存操作：[RefDataCacheOperation](/cache/src/main/java/cn/filaura/weave/cache/ref/RefDataCacheOperation.java)  
   配置为 SpringBean 后将自动接管缓存逻辑。
