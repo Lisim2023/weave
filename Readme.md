@@ -115,7 +115,7 @@ private List<Role> roles;   // ← 自动填充角色列表
 ### 1. 引入依赖
 > 当前版本： v1.1.0
 
-自动配置：
+自动配置（需同步引入 `aspectj` ）：
 ```xml
 <dependency>
     <groupId>cn.filaura</groupId>
@@ -123,23 +123,12 @@ private List<Role> roles;   // ← 自动填充角色列表
     <version>1.1.0</version>
 </dependency>
 ```
-（可选）Redis缓存支持：
+（可选）Redis缓存支持（需同步引入 `spring-data-redis` 和 `jackson` ）：
 ```xml
 <dependency>
     <groupId>cn.filaura</groupId>
     <artifactId>weave-cache-redis</artifactId>
     <version>1.1.0</version>
-</dependency>
-<!-- 需同步引入 -->
-<dependency>
-    <groupId>com.fasterxml.jackson.core</groupId>
-    <artifactId>jackson-databind</artifactId>
-    <version>2.14+</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-redis</artifactId>
-    <version>2.7+</version>
 </dependency>
 ```
 
