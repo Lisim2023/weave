@@ -4,23 +4,32 @@ package cn.filaura.weave.example.system.entity;
 
 import cn.filaura.weave.annotation.Mapping;
 import cn.filaura.weave.annotation.Dict;
-import cn.filaura.weave.annotation.Ref;
+import cn.filaura.weave.annotation.ServiceRef;
 import cn.filaura.weave.example.consts.DictCodes;
-import cn.filaura.weave.example.consts.DictColumns;
-import cn.filaura.weave.example.consts.TableNames;
-import cn.filaura.weave.example.consts.UserColumns;
+import cn.filaura.weave.example.system.service.DictService;
+import cn.filaura.weave.example.system.service.UserService;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 
+@ServiceRef(
+        service = DictService.class,
+        mappings = @Mapping(refField = "dictId", from = "name", to = "dictName")
+)
+@ServiceRef(
+        service = UserService.class,
+        mappings = {
+                @Mapping(refField = "createBy", from = "nickname", to = "createByUsername"),
+                @Mapping(refField = "updateBy", from = "nickname", to = "updateByUsername")
+        }
+)
 @Data
 public class DictItem {
 
     private Long id;
 
-    @Ref(table = TableNames.DICT, mappings = @Mapping(column = DictColumns.NAME, property = "dictName"))
     private Long dictId;
     private String dictName;
 
@@ -36,7 +45,6 @@ public class DictItem {
     private Integer enabled;
     private String enabledText;
 
-    @Ref(table = TableNames.USER, mappings = @Mapping(column = UserColumns.NICKNAME, property = "createByUsername"))
     private String createBy;
     private String createByUsername;
 
@@ -44,7 +52,6 @@ public class DictItem {
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
-    @Ref(table = TableNames.USER, mappings = @Mapping(column = UserColumns.NICKNAME, property = "updateByUsername"))
     private String updateBy;
     private String updateByUsername;
 

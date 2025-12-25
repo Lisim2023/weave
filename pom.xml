@@ -6,7 +6,7 @@
 
     <groupId>cn.filaura</groupId>
     <artifactId>weave-parent</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>pom</packaging>
 
     <name>weave-parent</name>
@@ -39,6 +39,7 @@
         <module>cache</module>
         <module>example</module>
         <module>weave-spring-boot-autoconfigure</module>
+        <module>weave-spring-boot-starter</module>
     </modules>
 
     <build>

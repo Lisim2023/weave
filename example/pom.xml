@@ -6,7 +6,7 @@
     <parent>
         <groupId>cn.filaura</groupId>
         <artifactId>weave-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
     </parent>
 
     <artifactId>weave-example</artifactId>
@@ -14,34 +14,11 @@
     <description>example for weave</description>
 
     <dependencies>
+
         <dependency>
             <groupId>cn.filaura</groupId>
-            <artifactId>weave-spring-boot-autoconfigure</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>cn.filaura</groupId>-->
-<!--            <artifactId>weave-cache-redis</artifactId>-->
-<!--            <version>1.1.0</version>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>com.fasterxml.jackson.core</groupId>-->
-<!--            <artifactId>jackson-databind</artifactId>-->
-<!--            <version>2.14.2</version>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-data-redis</artifactId>-->
-<!--            <version>3.3.2</version>-->
-<!--        </dependency>-->
-
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <version>8.3.0</version>
+            <artifactId>weave-spring-boot-starter</artifactId>
+            <version>1.2.0</version>
         </dependency>
 
         <dependency>
@@ -57,15 +34,27 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+            <version>3.3.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <version>3.3.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
             <version>3.0.4</version>
         </dependency>
 
         <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjtools</artifactId>
-            <version>1.9.6</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.3.0</version>
         </dependency>
 
         <dependency>

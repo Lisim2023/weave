@@ -1,6 +1,5 @@
 package cn.filaura.weave.example.system.service.impl;
 
-import cn.filaura.weave.example.consts.TableNames;
 import cn.filaura.weave.example.system.entity.SysDict;
 import cn.filaura.weave.example.system.mapper.DictMapper;
 import cn.filaura.weave.example.system.service.DictService;
@@ -23,18 +22,8 @@ public class DictServiceImpl implements DictService {
     }
 
     @Override
-    public List<SysDict> listDictByIds(List<Long> ids) {
-        return dictMapper.listDictByIds(ids);
-    }
-
-    @Override
-    public String getSupportedTable() {
-        return TableNames.DICT;
-    }
-
-    @Override
-    public List<SysDict> queryRefData(List<Long> ids) {
-        return listDictByIds(ids);
+    public List<SysDict> listByIds(List<Long> ids) {
+        return dictMapper.listByIds(ids);
     }
 
 }

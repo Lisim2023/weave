@@ -4,10 +4,9 @@ package cn.filaura.weave.example.system.entity;
 
 import cn.filaura.weave.annotation.Mapping;
 import cn.filaura.weave.annotation.Dict;
-import cn.filaura.weave.annotation.Ref;
+import cn.filaura.weave.annotation.ServiceRef;
 import cn.filaura.weave.example.consts.DictCodes;
-import cn.filaura.weave.example.consts.TableNames;
-import cn.filaura.weave.example.consts.UserColumns;
+import cn.filaura.weave.example.system.service.UserService;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
@@ -15,6 +14,13 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 
+@ServiceRef(
+        service = UserService.class,
+        mappings = {
+                @Mapping(refField = "createBy", from = "nickname", to = "createByUsername"),
+                @Mapping(refField = "updateBy", from = "nickname", to = "updateByUsername")
+        }
+)
 @Data
 public class SysDict {
 
@@ -30,7 +36,6 @@ public class SysDict {
     private Integer enabled;
     private String enabledText;
 
-    @Ref(table = TableNames.USER, mappings = @Mapping(column = UserColumns.NICKNAME, property = "createByUsername"))
     private String createBy;
     private String createByUsername;
 
@@ -38,7 +43,6 @@ public class SysDict {
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
-    @Ref(table = TableNames.USER, mappings = @Mapping(column = UserColumns.NICKNAME, property = "updateByUsername"))
     private String updateBy;
     private String updateByUsername;
 

@@ -1,245 +1,239 @@
 Weave
 ==========
-Weave是一款轻量级的数据关联框架，
-支持以注解驱动的方式完成跨表/跨服务数据的智能组装，
-通过标注注解即可自动完成字典翻译和跨表引用（替代Join查询），
+Weave 是一个轻量级的 Java 数据关联框架，
+通过注解驱动的方式，
+自动完成字典翻译、跨表/跨服务引用等常见的数据关联任务，
 从而显著减少项目中的样板代码，
 同时提高代码的可维护性和可读性。
 
+
 ## 项目特点
-- 无缝集成Spring、Mybatis等主流框架
-- 天然适配分布式环境，支持跨服务数据关联
-- 灵活扩展，支持自定义数据源、缓存、序列化等
+- **声明式编程**：通过简单的注解声明关联关系，框架自动完成数据填充。
+- **无缝集成**：与 Spring、MyBatis 等主流框架无缝集成。
+- **分布式友好**：天然适配分布式环境，兼容 Feign、Dubbo 等远程服务调用。
+- **灵活扩展**：支持自定义数据源、缓存、序列化等组件。
+- **非侵入性**：业务对象无需继承特定基类，支持动态字段注入。
 
 
 ## 注解介绍
 
-- ### `@Dict` 字典注解
-用于将字典字段的值翻译为对应的文本描述，可逆向操作。
-
-| 参数         | 必填 | 说明                      |
-|------------|:--:|-------------------------|
-| `code`     | ✅  | 字典标识码                   |
-| `property` | ❌  | 目标属性名，默认值为 `原属性名 + Text`|
-
-使用示例：
+### `@ServiceRef`
+**用途**：用于通过外键从指定服务的指定方法获取数据，并将结果的属性映射到当前对象。  
+**标注位置**：类。  
+**示例**：
 ```java
-// 使用property参数显式指定目标属性名
-@Dict(code = "user_status", property = "statusLabel")
-private String status;
-private String statusLabel;
-
-// 省略property参数，默认与“genderText”属性关联
-@Dict(code = "gender")
-private Integer gender;
-private String genderText;
-```
-
-
-- ### `@Ref` 引用注解
-用于通过外键从其他表或服务中引用数据并自动填充，替代Join查询。
-
-| 参数         | 必填 | 说明                |
-|------------|:----:|-------------------|
-| `table`    | ✅   | 关联表名              |
-| `key`      | ❌   | 主键名               |
-| `mappings` | ⚠️   | 列名-属性名映射关系（需配合`@Mapping`）|
-| `mapTo`    | ⚠️   | 映射到指定对象（自动映射同名属性） |
-
-> ⚠️注意：`mappings`与`mapTo`至少需要填写其中一种。
-
-使用示例：
-- ##### `mappings`参数：指定列与属性的映射关系
-```java
-@Ref(
-        table = "sys_user",
-        mappings = { @Mapping(column = "username", property = "createByUserName") }
+@ServiceRef(
+        service = UserService.class, 
+        mappings = {
+             @Mapping(refField = "firstApprover", from = "name", to = "firstApproverName"), 
+             @Mapping(refField = "secondApprover", from = "name", to = "secondApproverName")
+        }
 )
-private Long createBy;
-private String createByUserName;
+public class ContractDTO {
+    private Long firstApprover;
+    private String firstApproverName;
+
+    private Long secondApprover;
+    private String secondApproverName;
+}
 ```
 
-- ##### `mapTo`参数：将数据填充到目标对象（支持集合、数组）
+### `@RecordEmbed`
+**用途**：用于通过外键从指定服务的指定方法获取数据，并将完整数据记录嵌入到当前对象。  
+**标注位置**：需要嵌入数据的属性（支持集合和数组）。  
+**示例**：
 ```java
-@Ref(table = "sys_user", mapTo = "user")
-private Long userId;
-private User user;  // ← 自动填充 name/phone 等同名字段
+public class OrderDTO {
+    
+    private String userId;
 
-@Ref(table = "sys_role", mapTo = "roles")
-private List<Long> roleIds;
-private List<Role> roles;   // ← 自动填充角色列表
+    @RecordEmbed(service = UserService.class)
+    private User user;
+}
 ```
 
-- ### 其他注解
+### `@TableRef`
+**用途**：用于通过外键从关联表查询数据，并将结果中的列值映射到当前对象（只查询必要的列）。
+默认支持`MyBatis`系列框架，可通过[扩展](#expansion)适配其他`ORM`   
+**标注位置**：类。  
+**示例**：
+```java
+@TableRef(
+        table = "sys_user",
+        mappings = {
+                @Mapping(refField = "createBy", from = "name", to = "createByName"),
+                @Mapping(refField = "updateBy", from = "name", to = "updateByName")
+        }
+)
+public class OrderDTO {
+    private Long createBy;
+    private String createByName;
 
-  - #### `@Cascade` 级联注解
-    用于处理对象间的递归或级联关系，支持集合、数组：
-    ```java
-    public class Menu {
-      @Cascade
-      private List<Menu> children;  // 自动递归处理子菜单
-    }
-    ```
+    private Long updateBy;
+    private String updateByName;
+}
+```
+
+### `@Dict`
+**用途**：用于将字典的值（如 1）翻译为对应的描述文本（如 "启用"），或反之将描述文本翻译为字典值。  
+**标注位置**：存储字典值的属性（支持集合、数组、分隔符）。  
+**示例**：
+```java
+public class User {
+  @Dict(code = "user_status")
+  private Integer status;
+  private String statusText;
+}
+```
+> ⚠️使用前需实现 [DictDataProvider](core/src/main/java/cn/filaura/weave/dict/DictDataProvider.java) 并注册为`Spring Bean`。  
+> 示例参考：[DictDataFetcher.java](example/src/main/java/cn/filaura/weave/example/dict/DictDataFetcher.java)
 
 
-  - #### `@Mapping` 映射注解
-    配合 `@Ref` 定义字段映射规则
-    ```java
-    @Mapping(column = "dept_name", property = "departmentName")
-    ```
-
-
-  - #### `@Weave` 默认切点
-    标注于方法，自动对方法返回值执行引用和字典翻译。  
-    ```java
-    @Weave
-    // 自动对方法返回值执行跨表引用和字典翻译
-    public List<User> queryUsers() {
-    }
-    ```
-
-
-  - #### `@WeaveReverse` 逆向切点
-    标注于方法，自动对方法入参执行逆向字典翻译（字典文本到字典值）。  
-    ```java
-    @WeaveReverse
-    public void importUsers(List<User> users) {
-        // 自动对方法入参执行逆向字典翻译
-        userService.saveBatch(users);
-    }
-    ```
+### `@Cascade`
+**用途**：用于处理对象间的递归或级联关系，支持集合、数组。  
+**标注位置**：需要级联处理的属性。  
+**示例**：
+```java
+public class Menu {
+  @Cascade
+  private List<Menu> children;  // 自动递归处理子菜单
+}
+```  
 
 
 ## 快速开始
 
 ### 1. 引入依赖
-> 当前版本： v1.1.0
-
-自动配置（需同步引入 `aspectj` ）：
+> 当前版本： v1.2.0
 ```xml
 <dependency>
     <groupId>cn.filaura</groupId>
-    <artifactId>weave-spring-boot-autoconfigure</artifactId>
-    <version>1.1.0</version>
-</dependency>
-```
-（可选）Redis缓存支持（需同步引入 `spring-data-redis` 和 `jackson` ）：
-```xml
-<dependency>
-    <groupId>cn.filaura</groupId>
-    <artifactId>weave-cache-redis</artifactId>
-    <version>1.1.0</version>
+    <artifactId>weave-spring-boot-starter</artifactId>
+    <version>1.2.0</version>
 </dependency>
 ```
 
-
-### 2. 配置数据源
-需要实现数据源接口为对应的模块提供数据，实现以下接口并配置为 Spring Bean即可：  
-- ##### 字典数据源：[DictDataSource](/core/src/main/java/cn/filaura/weave/dict/DictDataSource.java)
-    ```java
-    // 示例伪代码
-    @Component
-    public class CustomDictDataSource implements DictDataSource {
-        @Override
-        public List<DictInfo> queryDictData(Collection<String> dictCodes) {
-            List<DictInfo> dictInfos = new ArrayList<>();
-            for (String dictCode : dictCodes) {
-                // 从数据库/配置中心/远程服务获取字典数据
-                Map<String, String> dictItems = dictService.findByCode(dictCode);
-                // 封装成要求的格式（一个标识码对应一组键值对Map）
-                dictInfos.add(new DictInfo(dictCode, dictItems));
-            }
-            return dictInfos;
-        }
-    }
-    ```
-  完整的实现流程可参考：[DictDataSourceImpl](/example/src/main/java/cn/filaura/weave/example/dict/DictDataSourceImpl.java)
+### 2. 使用方式
+- #### 方式一：全局自动处理
+若项目中包含`spring-boot-starter-web`，`Weave` 会自动拦截所有 `@ResponseBody` 返回值，并执行数据装配。  
+只用在 POJO类 按需添加注解即可，无需其它操作。
+> 可通过参数 weave.response-body-advice-enabled = false 关闭。
 
 
-- ##### 引用数据源：[RefDataSource](/core/src/main/java/cn/filaura/weave/ref/RefDataSource.java)
-
-    ```java
-    // 示例伪代码
-    @Component
-    public class CustomRefDataSource implements RefDataSource {
-
-        private Map<String, Service> serviceRouter = new HashMap<>();
-    
-        @Override
-        public List<?> queryRefData(String table, Collection<String> columns, String key, Collection<String> values) {
-            // 将主键值转换为正确的类型并排序
-            List<Long> ids = values.stream().map(Long::valueOf).sorted().toList();
-            // 按表名路由到对应服务
-            Service service = serviceRouter.get(table);
-            // 查询结果并返回
-            return service.listByIds(ids);
-        }
-    }
-    ```
-  完整的实现流程可参考：[RefDataSource2](/example/src/main/java/cn/filaura/weave/example/ref/RefDataSource2.java)  
-  也可以用动态SQL实现，返回List<Map<String, Object>>即可。
+- #### 方式二：AOP 精确控制
+若项目中包含 `spring-boot-starter-aop`，可在通过在方法上标注切面注解进行装配（目标方法必须被 Spring AOP 代理）。  
+`@Weave`：处理**返回值**（正向装配，填充字典文本、关联数据）
+```java
+@Weave
+// 自动填充 statusText="启用", creatorName="张三" 等
+public List<User> listUsers() {
+  return userMapper.selectAll();
+}
+```
+`@WeaveReverse`：处理**入参**（逆向字典翻译，字典文本 → 字典值）
+```java
+@WeaveReverse
+public void importUsers(List<User> users) {
+  // users 中的 statusText="启用" 将被自动转为 status=1
+  userMapper.batchInsert(users);
+}
+```
 
 
-### 3. 标注注解
-在实体类中按需标注 `@Dict`、`@Ref` 等字段注解，
-同时在目标方法上按需添加`@Weave`、`@WeaveReverse`切面注解即可
-（详见前文介绍）。
+- #### 方式三：手动调用
+根据需要注入相应的`Helper`，调用其方法即可：
+```java
+@Autowired
+private DictHelper dictHelper;
+@Autowired
+private TableRefHelper tableRefHelper;
+@Autowired
+private ServiceRefHelper serviceRefHelper;
 
+public void process(List<User> users) {
+  dictHelper.populateDictText(users);          // 正向字典翻译
+  dictHelper.populateDictValue(users);         // 反向字典解析
+  tableRefHelper.populateTableReferences(users);     // 表关联填充
+  serviceRefHelper.populateServiceReferences(users); // 服务引用填充
+}
+```
 
-## 可选参数
+## 自定义与扩展
+### 可选参数
+  可配置项及其默认值一览：
 ```yaml
 weave:
   # 功能开关
-  disable-weave-aspect: false          # 是否禁用 @Weave 切面
-  disable-weave-reverse-aspect: false  # 是否禁用 @WeaveReverse 切面
+  aspect-enabled: true                    # 是否启用AOP切面
+  reverse-aspect-enabled: true            # 是否启用逆向AOP切面
+  response-body-advice-enabled: true      # 是否启用ResponseBodyAdvice全局处理
 
-  # 字典配置
+  table-reference-enabled: true           # 是否启用 @TableRef 注解
+  service-reference-enabled: true         # 是否启用 @ServiceRef 与 @RecordEmbed 注解
+
+  # 缓存开关（基于 Spring Data Redis）
+  dict-cache-enabled: false               # 是否启用字典数据缓存
+  record-cache-enabled: false             # 是否启用完整数据记录缓存
+  column-projection-cache-enabled: false  # 是否启用列投影缓存
+  
+  # 字典相关
   dict:
-    delimiter: ','                  # 多值分隔符
-    field-name-suffix: 'Text'       # 生成字段后缀
+    delimiter: ','                        # 多值分隔符
+    text-field-suffix: 'Text'             # 字典文本字段默认后缀
 
-  # 引用配置
+  # 引用相关
   ref:
-    global-primary-key: 'id'        # 全局主键名
-    null-display-text: 'null'       # 空值显示文本
+    global-primary-key: 'id'              # 全局主键字段名
+    global-foreign-key-suffix: 'Id'       # 外键属性名默认后缀
+    global-method-name: 'listByIds'       # 服务默认方法名
+    batch-size: 500                       # 批量查询大小
 
   # 缓存配置
   cache:
-    dict-storage-key: "weave:dict"  # 字典缓存键
-    ref-storage-prefix: 'weave:ref' # 引用缓存前缀
-    ref-global-ttl: 86400           # 全局缓存时间(秒)
-    ref-random-ttl-offset: 300      # 随机过期时间偏移量(防雪崩)
-    # 表级缓存时间
-    ref-table-ttl:
-      # 示例
-      sys_user: 3600    # 用户表缓存1小时
-      sys_role: 86400   # 角色表缓存1天
-      sys_dept: 1800    # 部门表缓存30分钟
+    dict-prefix: 'weave:dict'
+    record-prefix: 'weave:record'
+    column-projection-prefix: 'weave:column_projection'
+
+    ttl-seconds: 7200                     # 缓存有效期（秒）
+    jitter-ratio: 0.1                     # 随机抖动比例（防雪崩，0-1之间）
+    max-jitter-seconds: 300               # 最大抖动秒数
 ```
 
-## 扩展
-- #### 多数据源支持 
-  实现以下接口以支持多数据源调度：  
-  字典：[DictDataProvider](/core/src/main/java/cn/filaura/weave/dict/DictDataProvider.java)  
-  引用：[RefDataProvider](/core/src/main/java/cn/filaura/weave/ref/RefDataProvider.java)  
-  配置为SpringBean后自动生效。
+### 扩展点
+<a id="expansion"></a>
+
+通过实现以下接口并注册为 Spring Bean，可深度定制 Weave 行为：
+### 数据源
+- **[DictDataProvider](core/src/main/java/cn/filaura/weave/dict/DictDataProvider.java)**  
+  为`@Dict`注解提供数据。
+
+- [**TableRefDataProvider**](core/src/main/java/cn/filaura/weave/ref/TableRefDataProvider.java)：
+自定义表查询逻辑，为`@TableRef`注解提供数据。
+
+- [**ServiceRefDataProvider**](core/src/main/java/cn/filaura/weave/ref/ServiceRefDataProvider.java)：
+  自定义服务方法调用方式（用于`@ServiceRef`和`@RecordEmbed`注解）。
 
 
-- #### 自定义类型转换器
-  处理特殊类型：
-  ```java
-  ConvertUtil.register(MyType.class, new MyTypeConverter());
-  ```
-  详见[ConvertUtil](/core/src/main/java/cn/filaura/weave/type/ConvertUtil.java)。
+#### 缓存策略
+- [**DictCache**](core/src/main/java/cn/filaura/weave/dict/DictCache.java)
+
+- [**ColumnProjectionCache**](core/src/main/java/cn/filaura/weave/ref/ColumnProjectionCache.java)
+
+- [**RecordCache**](core/src/main/java/cn/filaura/weave/ref/RecordCache.java)
 
 
-- #### 自定义序列化器
-  用于缓存中对象的序列化/反序列化。  
-  实现[Serializer](/cache/src/main/java/cn/filaura/weave/cache/Serializer.java)接口，并配置为SpringBean
+#### 其他
+- [**ResultExtractor**](core/src/main/java/cn/filaura/weave/ref/ResultExtractor.java)：
+  用于从服务调用返回的封装结果对象中提取实际数据列表。。
 
+- [**TypeConverter**](core/src/main/java/cn/filaura/weave/type/TypeConverter.java)：
+  自定义类型转换逻辑。
 
-- #### 自定义缓存操作
-  非 Redis 缓存（如 Caffeine、Memcached），可实现以下接口：  
-  字典缓存操作：[DictDataCacheOperation](/cache/src/main/java/cn/filaura/weave/cache/dict/DictDataCacheOperation.java)  
-  引用缓存操作：[RefDataCacheOperation](/cache/src/main/java/cn/filaura/weave/cache/ref/RefDataCacheOperation.java)  
-  配置为 SpringBean 后将自动接管缓存逻辑。
+- [**Serializer**](cache/src/main/java/cn/filaura/weave/cache/Serializer.java)：
+  自定义序列化方式，用于缓存。
+
+- [**PojoAccessor**](core/src/main/java/cn/filaura/weave/PojoAccessor.java)：
+  自定义属性访问机制。
+
+> 💡 若 POJO 实现 [**PropertyExtensible**](core/src/main/java/cn/filaura/weave/PropertyExtensible.java) 接口，框架可动态注入映射字段（无需提前声明 `xxxName` 等属性）。
+

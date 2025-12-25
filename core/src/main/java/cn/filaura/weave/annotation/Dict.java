@@ -10,9 +10,17 @@ import java.lang.annotation.Target;
 /**
  * 数据字典注解
  *
- * <p>用于实现字典值与字典显示文本的双向转换。
- * <p>典型应用场景：将数据库存储的字典值（如："0"/"1"）转换为对应的描述文本（如："男"/"女"），用于展示，
- * 或者反向将字典文本转换为字典值，用于数据导入。
+ * <p>用于完成字典值与字典显示文本之间的双向转换。
+ * <p>示例：
+ * <pre>{@code
+ * public class User {
+ *     @Dict(code = "user_status")
+ *     private Integer status;
+ *     private String statusText;
+ * }
+ * }</pre>
+ * <p>在数据展示时，可将 {@code status} 属性的值转换为对应的字典文本并赋值给 {@code statusText} 属性；
+ * <p>在数据导入时，可反向将 {@code statusText} 属性中的字典文本转换为字典值并赋值到 {@code status} 属性。
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
@@ -29,9 +37,10 @@ public @interface Dict {
     /**
      * 目标属性名（可选）
      *
-     * <p>指定另一属性用于存储字典描述文本。如果未指定，则根据规则生成（原属性名+后缀）。
+     * <p>指定另一属性用于保存字典描述文本。
+     * <p>如果未指定，自动推导为当前标注的属性名 + "Text"，可在配置文件中自定义后缀。
      * @return 目标属性名称
      */
-    String property() default "";
+    String targetField() default "";
 
 }

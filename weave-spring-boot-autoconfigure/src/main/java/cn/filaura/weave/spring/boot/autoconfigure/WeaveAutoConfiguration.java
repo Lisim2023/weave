@@ -1,32 +1,30 @@
 package cn.filaura.weave.spring.boot.autoconfigure;
 
 
-import cn.filaura.weave.BeanAccessor;
-import cn.filaura.weave.PropertyDescriptorBeanAccessor;
+import cn.filaura.weave.CachedPojoAccessor;
+import cn.filaura.weave.PojoAccessor;
 import cn.filaura.weave.dict.*;
+import cn.filaura.weave.inject.WeaveAspect;
+import cn.filaura.weave.inject.WeaveResponseBodyAdvice;
+import cn.filaura.weave.inject.WeaveReverseAspect;
 import cn.filaura.weave.ref.*;
 
+import cn.filaura.weave.type.DefaultTypeConverter;
+import cn.filaura.weave.type.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 
 
-/**
- * Weave自动配置类
- * <p>
- * 负责Weave框架所有核心组件的自动装配，主要包括：
- * <ul>
- *   <li>字典助手/引用助手（{@link DictHelper}/{@link RefHelper}）</li>
- *   <li>数据关联切面（{@link WeaveAspect}）</li>
- *   <li>逆向数据关联切面（{@link WeaveReverseAspect}）</li>
- * </ul>
- *
- */
+
 @Configuration
 @EnableConfigurationProperties(WeaveProperties.class)
-@Import(CacheConfiguration.class)
+@AutoConfigureOrder(100)
+@Import({WeaveMybatisMapperConfiguration.class, WeaveCacheConfiguration.class})
 public class WeaveAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(WeaveAutoConfiguration.class);
@@ -39,101 +37,199 @@ public class WeaveAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public BeanAccessor propertyDescriptorBeanAccessor() {
-        return new PropertyDescriptorBeanAccessor();
+    public PojoAccessor pojoAccessor() {
+        return new CachedPojoAccessor();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean({RefDataSource.class, RefDataCache.class})
-    public RefDataProvider cacheFirstRefDataProvider(RefDataSource refDataSource, RefDataCache refDataCache) {
-        return new CacheFirstRefDataProvider(refDataSource, refDataCache);
+    public TypeConverter typeConverter() {
+        return new DefaultTypeConverter();
+    }
+
+
+
+    @Bean
+    @ConditionalOnProperty(name = WeaveProperties.TABLE_REFERENCE_ENABLED, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnBean({TableRefDataProvider.DataFetcher.class, ColumnProjectionCache.class})
+    public TableRefDataProvider cachingDbRefDataProvider(
+            TableRefDataProvider.DataFetcher dataFetcher,
+            ColumnProjectionCache columnProjectionCache) {
+        return new CachingTableRefDataProvider(columnProjectionCache, dataFetcher);
     }
 
     @Bean
+    @ConditionalOnProperty(name = WeaveProperties.TABLE_REFERENCE_ENABLED, matchIfMissing = true)
     @ConditionalOnMissingBean
-    @ConditionalOnBean(RefDataSource.class)
-    public RefDataProvider directDataSourceRefDataProvider(RefDataSource refDataSource) {
-        return new DirectDataSourceRefDataProvider(refDataSource);
+    @ConditionalOnBean(TableRefDataProvider.DataFetcher.class)
+    public TableRefDataProvider dbRefDataProvider(
+            TableRefDataProvider.DataFetcher dataFetcher) {
+        return new DirectTableRefDataProvider(dataFetcher);
     }
 
     @Bean
+    @ConditionalOnProperty(name = WeaveProperties.TABLE_REFERENCE_ENABLED, matchIfMissing = true)
     @ConditionalOnMissingBean
-    @ConditionalOnBean(RefDataProvider.class)
-    public RefHelper refHelper(RefDataProvider refDataProvider, BeanAccessor beanAccessor) {
-        RefHelper refHelper = new RefHelper(refDataProvider);
-        if (weaveProperties.getRef().getNullDisplayText() != null) {
-            refHelper.setNullDisplayText(weaveProperties.getRef().getNullDisplayText());
-        }
+    @ConditionalOnBean(TableRefDataProvider.class)
+    public TableRefHelper tableRefHelper(TableRefDataProvider tableRefDataProvider,
+                                         PojoAccessor pojoAccessor,
+                                         TypeConverter typeConverter) {
+        TableRefHelper tableRefHelper = new TableRefHelper(tableRefDataProvider);
+        tableRefHelper.setPojoAccessor(pojoAccessor);
+        tableRefHelper.setTypeConverter(typeConverter);
         if (weaveProperties.getRef().getGlobalPrimaryKey() != null) {
-            refHelper.setGlobalPrimaryKey(weaveProperties.getRef().getGlobalPrimaryKey());
+            AbstractReferenceWeaver.setGlobalPrimaryKey(
+                    weaveProperties.getRef().getGlobalPrimaryKey());
         }
-        refHelper.setBeanAccessor(beanAccessor);
-        return refHelper;
+        return tableRefHelper;
+    }
+
+
+
+    @Bean
+    @ConditionalOnProperty(name = WeaveProperties.SERVICE_REFERENCE_ENABLED, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public ResultExtractor resultExtractor() {
+        return result -> result;
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = WeaveProperties.SERVICE_REFERENCE_ENABLED, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public ServiceRefDataProvider.DataFetcher serviceReferenceDataFetcher(
+            ApplicationContext context,
+            ResultExtractor resultExtractor) {
+        SpringBeanMethodInvoker methodInvoker = new SpringBeanMethodInvoker(context);
+        methodInvoker.setResultExtractor(resultExtractor);
+        ServiceRefDataFetcher fetcher = new ServiceRefDataFetcher(methodInvoker);
+        if (weaveProperties.getRef().getBatchSize() != null) {
+            fetcher.setBatchSize(weaveProperties.getRef().getBatchSize());
+        }
+        return fetcher;
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = WeaveProperties.SERVICE_REFERENCE_ENABLED, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnBean({ServiceRefDataProvider.DataFetcher.class, RecordCache.class})
+    public ServiceRefDataProvider cachingServiceRefDataProvider(
+            ServiceRefDataProvider.DataFetcher fetcher, RecordCache cache) {
+        return new CachingServiceRefDataProvider(cache, fetcher);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = WeaveProperties.SERVICE_REFERENCE_ENABLED, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(ServiceRefDataProvider.DataFetcher.class)
+    public ServiceRefDataProvider serviceRefDataProvider(
+            ServiceRefDataProvider.DataFetcher fetcher) {
+        return new DirectServiceRefDataProvider(fetcher);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = WeaveProperties.SERVICE_REFERENCE_ENABLED, matchIfMissing = true)
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(ServiceRefDataProvider.class)
+    public ServiceRefHelper serviceRefHelper(ServiceRefDataProvider serviceRefDataProvider,
+                                             PojoAccessor pojoAccessor,
+                                             TypeConverter typeConverter) {
+        ServiceRefHelper serviceRefHelper = new ServiceRefHelper(serviceRefDataProvider);
+        serviceRefHelper.setPojoAccessor(pojoAccessor);
+        serviceRefHelper.setTypeConverter(typeConverter);
+        WeaveProperties.Ref ref = weaveProperties.getRef();
+        if (ref.getGlobalPrimaryKey() != null) {
+            AbstractReferenceWeaver.setGlobalPrimaryKey(ref.getGlobalPrimaryKey());
+        }
+        if (ref.getGlobalForeignKeySuffix() != null) {
+            AbstractReferenceWeaver.setGlobalForeignKeySuffix(ref.getGlobalForeignKeySuffix());
+        }
+        if (ref.getGlobalMethodName() != null) {
+            AbstractReferenceWeaver.setGlobalMethodName(ref.getGlobalMethodName());
+        }
+        return serviceRefHelper;
     }
 
 
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean({DictDataSource.class, DictDataCache.class})
-    public DictDataProvider cacheFirstDictDataProvider(DictDataSource dictDataSource, DictDataCache dictDataCache) {
-        return new CacheFirstDictDataProvider(dictDataSource, dictDataCache);
+    @ConditionalOnBean(DictDataProvider.DataFetcher.class)
+    public DictCache localMemoryDictCache() {
+        return new LocalMemoryDictCache();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(DictDataSource.class)
-    public DictDataProvider directDataSourceDictDataProvider(DictDataSource dictDataSource) {
-        return new DirectDataSourceDictDataProvider(dictDataSource);
+    @ConditionalOnBean({DictDataProvider.DataFetcher.class, DictCache.class})
+    public DictDataProvider dictProvider(DictDataProvider.DataFetcher dataFetcher,
+                                         DictCache dictCache) {
+        return new CachingDictDataProvider(dictCache, dataFetcher);
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(DictDataProvider.class)
-    public DictHelper dictHelper(DictDataProvider dictDataProvider, BeanAccessor beanAccessor) {
+    public DictHelper dictHelper(DictDataProvider dictDataProvider,
+                                 PojoAccessor pojoAccessor,
+                                 TypeConverter typeConverter) {
         DictHelper dictHelper = new DictHelper(dictDataProvider);
-        if (weaveProperties.getDict().getFieldNameSuffix() != null) {
-            dictHelper.setFieldNameSuffix(weaveProperties.getDict().getFieldNameSuffix());
-        }
+        dictHelper.setPojoAccessor(pojoAccessor);
+        dictHelper.setTypeConverter(typeConverter);
         if (weaveProperties.getDict().getDelimiter() != null) {
-            dictHelper.setDelimiter(weaveProperties.getDict().getDelimiter());
+            AbstractDictWeaver.setDelimiter(weaveProperties.getDict().getDelimiter());
         }
-        dictHelper.setBeanAccessor(beanAccessor);
+        if (weaveProperties.getDict().getTextFieldSuffix() != null) {
+            AbstractDictWeaver.setTextFieldSuffix(weaveProperties.getDict().getTextFieldSuffix());
+        }
         return dictHelper;
+    }
+
+
+
+    @Bean
+    @ConditionalOnClass(name =
+            "org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice")
+    @ConditionalOnProperty(name = WeaveProperties.RESPONSE_BODY_ADVICE_ENABLED,
+            matchIfMissing = true)
+    @Conditional(OnAnyHelperExistsCondition.class)
+    public WeaveResponseBodyAdvice weaveResponseBodyAdvice() {
+        log.info("Creating WeaveResponseBodyAdvice - data weaving is now active");
+        return new WeaveResponseBodyAdvice();
     }
 
     @Bean
     @ConditionalOnClass(name = "org.aspectj.lang.annotation.Aspect")
-    @ConditionalOnProperty(name = WeaveProperties.WEAVE_PREFIX + ".disable-weave-aspect",
-            havingValue = "false", matchIfMissing = true)
-    @Conditional(OnDictHelperOrRefHelperCondition.class)
+    @ConditionalOnProperty(name = WeaveProperties.ASPECT_ENABLED, matchIfMissing = true)
+    @Conditional(OnAnyHelperExistsCondition.class)
     public WeaveAspect weaveAspect() {
         log.info("Creating WeaveAspect - data weaving is now active");
         return new WeaveAspect();
     }
 
+    @Bean
+    @ConditionalOnClass(name = "org.aspectj.lang.annotation.Aspect")
+    @ConditionalOnProperty(name = WeaveProperties.REVERSE_ASPECT_ENABLED, matchIfMissing = true)
+    @ConditionalOnBean(DictHelper.class)
+    public WeaveReverseAspect weaveReverseAspect() {
+        log.info("Creating WeaveReverseAspect - data reverse weaving is now active");
+        return new WeaveReverseAspect();
+    }
+
     // 组合条件类
-    static class OnDictHelperOrRefHelperCondition extends AnyNestedCondition {
-        OnDictHelperOrRefHelperCondition() {
+    static class OnAnyHelperExistsCondition extends AnyNestedCondition {
+        OnAnyHelperExistsCondition() {
             super(ConfigurationPhase.REGISTER_BEAN);
         }
 
         @ConditionalOnBean(DictHelper.class)
         static class OnDictHelperExists {}
 
-        @ConditionalOnBean(RefHelper.class)
-        static class OnRefHelperExists {}
-    }
+        @ConditionalOnBean(TableRefHelper.class)
+        static class OnTableRefHelperExists {}
 
-    @Bean
-    @ConditionalOnClass(name = "org.aspectj.lang.annotation.Aspect")
-    @ConditionalOnProperty(name = WeaveProperties.WEAVE_PREFIX + ".disable-weave-reverse-aspect",
-            havingValue = "false", matchIfMissing = true)
-    @ConditionalOnBean(DictHelper.class)
-    public WeaveReverseAspect weaveReverseAspect() {
-        log.info("Creating WeaveReverseAspect - data reverse weaving is now active");
-        return new WeaveReverseAspect();
+        @ConditionalOnBean(ServiceRefHelper.class)
+        static class OnServiceRefHelperExists {}
     }
 
 }

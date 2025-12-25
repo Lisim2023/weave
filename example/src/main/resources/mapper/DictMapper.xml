@@ -27,7 +27,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		and enabled = 0
 	</select>
 
-	<select id="listDictByIds" resultMap="DictResult">
+	<select id="listByIds" resultMap="DictResult">
 		select id, name, code, description
 		from sys_dict
 		where del_flag = 0

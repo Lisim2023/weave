@@ -1,78 +1,144 @@
 package cn.filaura.weave;
 
 import cn.filaura.weave.annotation.Cascade;
+import cn.filaura.weave.exception.PojoAccessException;
+import cn.filaura.weave.type.DefaultTypeConverter;
+import cn.filaura.weave.type.TypeConverter;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractWeaver {
 
     protected static final AnnotatedFieldExtractor CASCADE_FIELD_EXTRACTOR = new AnnotatedFieldExtractor(Cascade.class);
 
-    protected BeanAccessor beanAccessor = new PropertyDescriptorBeanAccessor();
+    protected PojoAccessor pojoAccessor = new CachedPojoAccessor();
+    protected TypeConverter typeConverter = new DefaultTypeConverter();
 
-
-
-    public Set<Class<?>> gatherClassTypes(Object beans){
+    public Set<Class<?>> gatherClassTypes(Object pojos){
         Set<Class<?>> classSet = new HashSet<>();
-        recursive(beans, bean -> classSet.add(bean.getClass()));
+        recursive(pojos, bean -> classSet.add(bean.getClass()));
         return classSet;
     }
 
-    protected void recursive(Object beans, Consumer<Object> nodeProcessor) {
-        if (beans == null) {
+    protected void recursive(Object pojos, Consumer<Object> nodeProcessor) {
+        if (pojos == null) {
             return;
         }
 
-        if (beans instanceof Collection) {
-            for (Object bean : (Collection<?>)beans) {
-                recursive(bean, nodeProcessor);
+        if (pojos instanceof Collection) {
+            for (Object pojo : (Collection<?>)pojos) {
+                recursive(pojo, nodeProcessor);
             }
             return;
         }
 
-        if (beans.getClass().isArray()) {
-            int length = Array.getLength(beans);
+        if (pojos.getClass().isArray()) {
+            int length = Array.getLength(pojos);
             for (int i = 0; i < length; i++) {
-                Object element = Array.get(beans, i);
+                Object element = Array.get(pojos, i);
                 recursive(element, nodeProcessor);
             }
             return;
         }
 
-        nodeProcessor.accept(beans);
-        Field[] fields = CASCADE_FIELD_EXTRACTOR.getAnnotatedFields(beans.getClass());
+        nodeProcessor.accept(pojos);
+        Field[] fields = CASCADE_FIELD_EXTRACTOR.getAnnotatedFields(pojos.getClass());
         for (Field field : fields) {
-            Object cascade = beanAccessor.getProperty(beans, field.getName());
+            Object cascade = pojoAccessor.getPropertyValue(pojos, field.getName());
             recursive(cascade, nodeProcessor);
         }
     }
 
-    protected String getFieldValue(Object bean, String fieldName) {
-        Object value = beanAccessor.getProperty(bean, fieldName);
-        return value == null ? null : value.toString();
+    /**
+     * 直接设置属性值，不进行类型转换。
+     * 若属性不存在则尝试动态扩展。
+     */
+    protected void writeRawProperty(Object pojo, String name, Object value) {
+        doWriteProperty(pojo, name, value, false);
     }
 
-    protected String capitalize(String s) {
-        if (s == null || s.isEmpty()) {
-            return "";
+    /**
+     * 设置属性值，值会根据目标属性类型自动转换。
+     * 若属性不存在则尝试动态扩展。
+     */
+    protected void writeConvertedProperty(Object pojo, String name, Object value) {
+        doWriteProperty(pojo, name, value, true);
+    }
+
+    private void doWriteProperty(Object pojo, String name, Object value, boolean autoConvert) {
+        try {
+            if (autoConvert) {
+                Class<?> targetType = pojoAccessor.getPropertyType(pojo.getClass(), name);
+                if (!targetType.isAssignableFrom(value.getClass())) {
+                    value = typeConverter.convert(value, targetType);
+                }
+            }
+            pojoAccessor.setPropertyValue(pojo, name, value);
+        } catch (PojoAccessException e) {
+            if (pojo instanceof PropertyExtensible) {
+                ((PropertyExtensible) pojo).extendProperty(name, value);
+            } else {
+                throw e;
+            }
         }
-        StringBuilder sb = new StringBuilder(s);
-        sb.setCharAt(0, Character.toUpperCase(sb.charAt(0)));
-        return sb.toString();
+    }
+
+    protected String[] toStringArray(Object fieldValue) {
+        if (fieldValue == null) return new String[0];
+        if (fieldValue instanceof Collection) {
+            return ((Collection<?>) fieldValue).stream()
+                    .map(String::valueOf)
+                    .toArray(String[]::new);
+
+        } else if (fieldValue.getClass().isArray()) {
+            int length = Array.getLength(fieldValue);
+            String[] array = new String[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = String.valueOf(Array.get(fieldValue, i));
+            }
+            return array;
+        }
+        throw new IllegalArgumentException("Unsupported field value type for conversion to String[]: "
+                + fieldValue.getClass().getName());
+    }
+
+    protected Collection<?> convertStreamToCollection(Stream<?> stream, Class<?> targetType) {
+        if (Set.class.isAssignableFrom(targetType)) {
+            return stream.collect(Collectors.toSet());
+        }
+        if (List.class.isAssignableFrom(targetType)) {
+            return stream.collect(Collectors.toList());
+        }
+        if (Collection.class.isAssignableFrom(targetType)) {
+            return stream.collect(Collectors.toList());
+        }
+
+        throw new IllegalArgumentException(
+                String.format("Unsupported target type: %s. Supported types: Set, List, Collection",
+                        targetType.getName()));
     }
 
 
 
-    public BeanAccessor getBeanAccessor() {
-        return beanAccessor;
+    public PojoAccessor getPojoAccessor() {
+        return pojoAccessor;
     }
 
-    public void setBeanAccessor(BeanAccessor beanAccessor) {
-        this.beanAccessor = beanAccessor;
+    public void setPojoAccessor(PojoAccessor pojoAccessor) {
+        this.pojoAccessor = pojoAccessor;
     }
+
+    public TypeConverter getTypeConverter() {
+        return typeConverter;
+    }
+
+    public void setTypeConverter(TypeConverter typeConverter) {
+        this.typeConverter = typeConverter;
+    }
+
 }

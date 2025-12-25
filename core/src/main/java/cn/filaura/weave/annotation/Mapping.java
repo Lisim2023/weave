@@ -6,22 +6,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>用于{@link Ref#mappings()}参数，用来指定列与属性的映射关系。
+ * 源对象与目标对象的属性映射关系
+ *
  */
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Mapping {
 
     /**
-     * 数据表中的列名
-     * @return 列名
-     */
-    String column();
-
-    /**
-     * 对象的属性名
+     * 外键属性名
      * @return 属性名
      */
-    String property();
+    String refField();
+
+    /**
+     * 原属性名或列名
+     * @return 列名
+     */
+    String from();
+
+    /**
+     * 目标属性名
+     * @return 属性名
+     */
+    String to();
 
 }

@@ -17,4 +17,5 @@ public interface Converter<T> {
      * @return 转换后的对象
      */
     T convert(String source) throws ConvertException;
+
 }

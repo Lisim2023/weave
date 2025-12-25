@@ -1,21 +1,27 @@
 package cn.filaura.weave.example.system.entity;
 
 
-import cn.filaura.weave.annotation.Ref;
-import cn.filaura.weave.example.consts.TableNames;
+
+import cn.filaura.weave.annotation.RecordEmbed;
+import cn.filaura.weave.example.system.service.RoleService;
+import cn.filaura.weave.example.system.service.UserService;
 import lombok.Data;
+
 
 @Data
 public class RoleUser {
 
     private Long id;
 
-    @Ref(table = TableNames.ROLE, mapTo = "role")
     private Long roleId;
+
+    @RecordEmbed(service = RoleService.class)
     private Role role;
 
-    @Ref(table = TableNames.USER, mapTo = "user")
+
     private Long userId;
+
+    @RecordEmbed(service = UserService.class)
     private User user;
 
 }

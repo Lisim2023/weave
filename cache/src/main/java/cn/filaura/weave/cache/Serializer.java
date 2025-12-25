@@ -1,9 +1,7 @@
 package cn.filaura.weave.cache;
 
 
-
 import java.util.Map;
-
 
 
 /**
@@ -14,7 +12,7 @@ import java.util.Map;
 public interface Serializer {
 
     /**
-     * 将Map类型数据序列化为字符串
+     * 将数据序列化为字符串
      *
      * @param data 待序列化的Map对象
      * @return 序列化后的字符串
@@ -29,7 +27,7 @@ public interface Serializer {
      * @return 反序列化后的Map对象
      * @throws SerializationException 序列化过程中出现异常时，封装并抛出此异常，包含错误详情信息
      */
-    Map<String, String> deSerialize(String data) throws SerializationException;
+    Map<String, Object> deSerialize(String data) throws SerializationException;
 
     /**
      * 将字符串反序列化为指定的类型
@@ -40,4 +38,5 @@ public interface Serializer {
      * @throws SerializationException 序列化过程中出现异常时，封装并抛出此异常
      */
     <T> T deSerialize(String data, Class<T> tClass) throws SerializationException;
+
 }

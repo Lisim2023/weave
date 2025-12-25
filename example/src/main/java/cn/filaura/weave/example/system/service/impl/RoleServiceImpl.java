@@ -1,7 +1,6 @@
 package cn.filaura.weave.example.system.service.impl;
 
 
-import cn.filaura.weave.example.consts.TableNames;
 import cn.filaura.weave.example.system.entity.Role;
 import cn.filaura.weave.example.system.mapper.RoleMapper;
 import cn.filaura.weave.example.system.service.RoleService;
@@ -24,17 +23,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<Role> listRoleByIds(List<Long> ids) {
-        return roleMapper.listRoleByIds(ids);
+    public List<Role> listByIds(List<Long> ids) {
+        return roleMapper.listByIds(ids);
     }
 
-    @Override
-    public String getSupportedTable() {
-        return TableNames.ROLE;
-    }
-
-    @Override
-    public List<Role> queryRefData(List<Long> ids) {
-        return listRoleByIds(ids);
-    }
 }

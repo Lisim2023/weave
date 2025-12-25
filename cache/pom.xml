@@ -6,7 +6,7 @@
     <parent>
         <groupId>cn.filaura</groupId>
         <artifactId>weave-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
     </parent>
 
     <artifactId>weave-cache-redis</artifactId>
@@ -17,7 +17,7 @@
         <dependency>
             <groupId>cn.filaura</groupId>
             <artifactId>weave</artifactId>
-            <version>1.1.0</version>
+            <version>1.2.0</version>
         </dependency>
 
         <dependency>
@@ -33,6 +33,21 @@
             <version>3.3.2</version>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

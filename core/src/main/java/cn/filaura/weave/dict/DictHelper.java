@@ -2,10 +2,12 @@ package cn.filaura.weave.dict;
 
 
 
-import cn.filaura.weave.BeanAccessor;
+import cn.filaura.weave.PojoAccessor;
 import cn.filaura.weave.annotation.Dict;
-import cn.filaura.weave.exception.BeanAccessException;
+import cn.filaura.weave.exception.PojoAccessException;
 import cn.filaura.weave.exception.DictDataNotFoundException;
+import cn.filaura.weave.type.TypeConverter;
+
 import java.util.*;
 
 
@@ -20,111 +22,67 @@ import java.util.*;
  */
 public class DictHelper {
 
-    private final DictWeaver dictWeaver = new DictWeaver();
     private final DictDataProvider dictDataProvider;
 
+    private final DictTextWeaver dictTextWeaver = new DictTextWeaver();
+    private final DictValueWeaver dictValueWeaver = new DictValueWeaver();
 
-
-    /**
-     * @param dictDataSource 字典数据源
-     */
-    public DictHelper(DictDataSource dictDataSource) {
-        this(new DirectDataSourceDictDataProvider(dictDataSource));
-    }
-
-    /**
-     * @param dictDataProvider 字典数据提供
-     */
     public DictHelper(DictDataProvider dictDataProvider) {
         this.dictDataProvider = dictDataProvider;
     }
 
-
-
     /**
      * <p>为传入的对象注入字典文本
      *
-     * @param beans 待处理的目标对象，可以是单个对象或集合
+     * @param pojos 待处理的目标对象，可以是单个对象或集合
      * @return 处理后的的目标对象（原对象修改后返回）
      *
      */
-    public <T> T populateDictText(T beans)
-            throws DictDataNotFoundException, BeanAccessException {
-        Set<String> dictCodes = dictWeaver.collectDictCodes(beans);
+    public <T> T populateDictText(T pojos) throws DictDataNotFoundException {
+        List<String> dictCodes = dictTextWeaver.collectDictCodes(pojos);
         if (dictCodes == null || dictCodes.isEmpty()) {
-            return beans;
+            return pojos;
         }
 
-        Map<String, DictInfo> dict = dictDataProvider.getDictData(dictCodes);
-        if (dict == null) {
+        Map<String, DictInfo> dictInfoMap = dictDataProvider.getDictData(dictCodes);
+        if (dictInfoMap == null) {
             throw new DictDataNotFoundException("Dictionary data is null for codes: " + dictCodes);
         }
+        dictTextWeaver.weaveDictText(pojos, dictInfoMap);
 
-        dictWeaver.populateDictText(beans, dict);
-        return beans;
+        return pojos;
     }
 
     /**
      * <p>为传入的对象注入字典值
      *
-     * @param beans 待处理的目标对象，可以是单个对象或集合
+     * @param pojos 待处理的目标对象，可以是单个对象或集合
      * @return 处理后的目标对象（原对象修改后返回）
      */
-    public <T> T populateDictValue(T beans)
-            throws DictDataNotFoundException, BeanAccessException {
-        Set<String> dictCodes = dictWeaver.collectDictCodes(beans);
+    public <T> T populateDictValue(T pojos)
+            throws DictDataNotFoundException, PojoAccessException {
+        List<String> dictCodes = dictValueWeaver.collectDictCodes(pojos);
         if (dictCodes == null || dictCodes.isEmpty()) {
-            return beans;
+            return pojos;
         }
 
-        Map<String, DictInfo> dict = dictDataProvider.getDictData(dictCodes);
-        if (dict == null) {
+        Map<String, DictInfo> dictInfoMap = dictDataProvider.getDictData(dictCodes);
+        if (dictInfoMap == null) {
             throw new DictDataNotFoundException("Dictionary data is null for codes: " + dictCodes);
         }
 
-        dictWeaver.populateDictValue(beans, dict);
-        return beans;
+        dictValueWeaver.weaveDictValue(pojos, dictInfoMap);
+        return pojos;
     }
 
 
-    /**
-     * 获取字典属性名后缀
-     * @return 字典属性名后缀
-     */
-    public String getFieldNameSuffix() {
-        return dictWeaver.getFieldNameSuffix();
+    public void setPojoAccessor(PojoAccessor pojoAccessor) {
+        dictTextWeaver.setPojoAccessor(pojoAccessor);
+        dictValueWeaver.setPojoAccessor(pojoAccessor);
     }
 
-    /**
-     * 设置字典属性名后缀
-     * @param fieldNameSuffix 新的属性名后缀
-     */
-    public void setFieldNameSuffix(String fieldNameSuffix) {
-        dictWeaver.setFieldNameSuffix(fieldNameSuffix);
-    }
-
-    /**
-     * 获取属性值分隔符
-     * @return 分隔符
-     */
-    public String getDelimiter() {
-        return dictWeaver.getDelimiter();
-    }
-
-    /**
-     * 设置属性值分隔符
-     * @param delimiter 分隔符
-     */
-    public void setDelimiter(String delimiter) {
-        dictWeaver.setDelimiter(delimiter);
-    }
-
-
-    public BeanAccessor getBeanAccessor() {
-        return dictWeaver.getBeanAccessor();
-    }
-
-    public void setBeanAccessor(BeanAccessor beanAccessor) {
-        dictWeaver.setBeanAccessor(beanAccessor);
+    public void setTypeConverter(TypeConverter typeConverter) {
+        dictTextWeaver.setTypeConverter(typeConverter);
+        dictValueWeaver.setTypeConverter(typeConverter);
     }
 }

@@ -2,44 +2,52 @@
 {
   "properties": [
     {
-      "name": "weave.disable-weave-aspect",
+      "name": "weave.aspect-enabled",
       "type": "java.lang.Boolean",
-      "description": "是否禁用WeaveAspect自动配置，默认为false表示启用",
+      "description": "是否启用WeaveAspect切面，默认为true表示启用",
+      "defaultValue": true
+    },
+    {
+      "name": "weave.reverse-aspect-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用WeaveReverseAspect切面，默认为true表示启用",
+      "defaultValue": true
+    },
+    {
+      "name": "weave.response-body-advice-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用ResponseBodyAdvice全局自动处理，默认为true表示启用",
+      "defaultValue": true
+    },
+    {
+      "name": "weave.table-reference-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 @TableRef 注解功能，默认为true表示启用",
+      "defaultValue": true
+    },
+    {
+      "name": "weave.service-reference-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 @ServiceRef 与 @RecordEmbed 注解功能，默认为true表示启用",
+      "defaultValue": true
+    },
+    {
+      "name": "weave.dict-cache-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用字典数据扩展缓存，默认为false表示不启用",
       "defaultValue": false
     },
     {
-      "name": "weave.disable-weave-reverse-aspect",
+      "name": "weave.record-cache-enabled",
       "type": "java.lang.Boolean",
-      "description": "是否禁用WeaveReverseAspect自动配置，默认为false表示启用",
+      "description": "是否启用完整记录缓存，默认为false表示不启用",
       "defaultValue": false
-    }
-  ],
-  "hints": [
-    {
-      "name": "weave.disable-weave-aspect",
-      "values": [
-        {
-          "value": true,
-          "description": "禁用@Weave切面"
-        },
-        {
-          "value": false,
-          "description": "启用@Weave切面"
-        }
-      ]
     },
     {
-      "name": "weave.disable-weave-reverse-aspect",
-      "values": [
-        {
-          "value": true,
-          "description": "禁用@WeaveReverse切面"
-        },
-        {
-          "value": false,
-          "description": "启用@WeaveReverse切面"
-        }
-      ]
+      "name": "weave.column-projection-cache-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用列投影缓存，默认为false表示不启用",
+      "defaultValue": false
     }
   ]
 }

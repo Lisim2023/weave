@@ -1,9 +1,9 @@
 package cn.filaura.weave.spring.boot.autoconfigure;
 
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -12,11 +12,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * 包含字典处理、引用关联和缓存策略的全部配置项。
  * </p>
  */
-@ConfigurationProperties(prefix = WeaveProperties.WEAVE_PREFIX)
+@ConfigurationProperties(prefix = WeaveProperties.PREFIX)
 public class WeaveProperties {
 
     /** 配置属性统一前缀 */
-    public static final String WEAVE_PREFIX = "weave";
+    public static final String PREFIX = "weave";
+    public static final String DOT = ".";
+
+    public static final String DICT_CACHE_ENABLED = PREFIX + DOT + "dict-cache-enabled";
+    public static final String RECORD_CACHE_ENABLED = PREFIX + DOT + "record-cache-enabled";
+    public static final String COLUMN_PROJECTION_CACHE_ENABLED =
+            PREFIX + DOT + "column-projection-cache-enabled";
+
+    public static final String TABLE_REFERENCE_ENABLED = PREFIX + DOT + "table-reference-enabled";
+    public static final String SERVICE_REFERENCE_ENABLED =
+            PREFIX + DOT + "service-reference-enabled";
+
+    public static final String ASPECT_ENABLED = PREFIX + DOT + "aspect-enabled";
+    public static final String REVERSE_ASPECT_ENABLED = PREFIX + DOT + "reverse-aspect-enabled";
+
+    public static final String RESPONSE_BODY_ADVICE_ENABLED =
+            PREFIX + DOT + "response-body-advice-enabled";
 
     /** 字典相关配置项 */
     private final Dict dict = new Dict();
@@ -34,85 +50,107 @@ public class WeaveProperties {
      * 字典处理配置组
      */
     public static class Dict {
-        /**
-         * 字典值分隔符
-         */
+        /** 字典值分隔符 */
         private String delimiter;
 
-        /**
-         * 字典文本字典默认后缀
-         */
-        private String fieldNameSuffix;
+        /** 字典文本属性名默认后缀 */
+        private String textFieldSuffix;
 
         // Getters and Setters
         public String getDelimiter() { return delimiter; }
         public void setDelimiter(String delimiter) { this.delimiter = delimiter; }
-        public String getFieldNameSuffix() { return fieldNameSuffix; }
-        public void setFieldNameSuffix(String fieldNameSuffix) { this.fieldNameSuffix = fieldNameSuffix; }
+        public String getTextFieldSuffix() {return textFieldSuffix;}
+        public void setTextFieldSuffix(String textFieldSuffix) {this.textFieldSuffix = textFieldSuffix;}
     }
 
     /**
      * 引用关联配置组
      */
     public static class Ref {
-        /**
-         * 全局主键字段名
-         */
+        /** 全局主键字段名 */
         private String globalPrimaryKey;
-        /**
-         * 空值显示文本
-         * <p>当关联数据中的列值为null时显示的文本
-         */
-        private String nullDisplayText;
+        /** 全局外键名后缀 */
+        private String globalForeignKeySuffix;
+        /** 全局方法名 */
+        private String globalMethodName;
+        /** 批量查询上限 */
+        private Integer batchSize;
 
         // Getters and Setters
         public String getGlobalPrimaryKey() { return globalPrimaryKey; }
         public void setGlobalPrimaryKey(String globalPrimaryKey) { this.globalPrimaryKey = globalPrimaryKey; }
-        public String getNullDisplayText() { return nullDisplayText; }
-        public void setNullDisplayText(String nullDisplayText) { this.nullDisplayText = nullDisplayText; }
+        public String getGlobalForeignKeySuffix() {return globalForeignKeySuffix;}
+        public void setGlobalForeignKeySuffix(String globalForeignKeySuffix) {this.globalForeignKeySuffix = globalForeignKeySuffix;}
+        public Integer getBatchSize() {return batchSize;}
+        public void setBatchSize(Integer batchSize) {this.batchSize = batchSize;}
+        public String getGlobalMethodName() {return globalMethodName;}
+        public void setGlobalMethodName(String globalMethodName) {this.globalMethodName = globalMethodName;}
     }
 
     /**
      * 缓存策略配置组
      */
     public static class Cache {
-        /**
-         * 字典数据存储键名
-         * <p>字典数据在缓存中的全局存储键
-         */
-        private String dictStorageKey;
+        private String dictPrefix;
 
-        /**
-         * 引用数据缓存前缀
-         * <p>引用数据在缓存中的键名前缀
-         */
-        private String refStoragePrefix;
-        /**
-         * 引用数据全局TTL（秒）
-         * <p>所有引用数据缓存的基础生存时间
-         */
-        private Long refGlobalTtl;
-        /**
-         * 引用数据TTL随机偏移量（秒）
-         * <p>在全局TTL基础上增加的随机偏移范围，用于避免缓存雪崩
-         */
-        private Integer refRandomTtlOffset;
-        /**
-         * 表级引用数据TTL配置
-         * <p>按表名配置自定义TTL（秒），格式：{表名: TTL}
-         */
-        private final Map<String, Long> refTableTtl = new ConcurrentHashMap<>();
+        private String recordPrefix;
+        private Map<String, Long> ttlByClassName;
 
-        // Getters and Setters
-        public String getDictStorageKey() { return dictStorageKey; }
-        public void setDictStorageKey(String dictStorageKey) { this.dictStorageKey = dictStorageKey; }
-        public Long getRefGlobalTtl() { return refGlobalTtl; }
-        public void setRefGlobalTtl(Long refGlobalTtl) { this.refGlobalTtl = refGlobalTtl; }
-        public String getRefStoragePrefix() { return refStoragePrefix; }
-        public void setRefStoragePrefix(String refStoragePrefix) { this.refStoragePrefix = refStoragePrefix; }
-        public Integer getRefRandomTtlOffset() { return refRandomTtlOffset; }
-        public void setRefRandomTtlOffset(Integer refRandomTtlOffset) { this.refRandomTtlOffset = refRandomTtlOffset; }
-        public Map<String, Long> getRefTableTtl() { return refTableTtl; }
+        private String columnProjectionPrefix;
+        private Map<String, Long> ttlByTable;
+
+        private Long ttlSeconds;
+        private Double jitterRatio;
+        private Integer maxJitterSeconds;
+
+        public String getDictPrefix() {
+            return dictPrefix;
+        }
+        public void setDictPrefix(String dictPrefix) {
+            this.dictPrefix = dictPrefix;
+        }
+        public String getRecordPrefix() {
+            return recordPrefix;
+        }
+        public void setRecordPrefix(String recordPrefix) {
+            this.recordPrefix = recordPrefix;
+        }
+        public String getColumnProjectionPrefix() {
+            return columnProjectionPrefix;
+        }
+        public void setColumnProjectionPrefix(String columnProjectionPrefix) {
+            this.columnProjectionPrefix = columnProjectionPrefix;
+        }
+        public Long getTtlSeconds() {
+            return ttlSeconds;
+        }
+        public void setTtlSeconds(Long ttlSeconds) {
+            this.ttlSeconds = ttlSeconds;
+        }
+        public Double getJitterRatio() {
+            return jitterRatio;
+        }
+        public void setJitterRatio(Double jitterRatio) {
+            this.jitterRatio = jitterRatio;
+        }
+        public Integer getMaxJitterSeconds() {
+            return maxJitterSeconds;
+        }
+        public void setMaxJitterSeconds(Integer maxJitterSeconds) {
+            this.maxJitterSeconds = maxJitterSeconds;
+        }
+        public Map<String, Long> getTtlByTable() {
+            return ttlByTable;
+        }
+        public void setTtlByTable(Map<String, Long> ttlByTable) {
+            this.ttlByTable = ttlByTable;
+        }
+        public Map<String, Long> getTtlByClassName() {
+            return ttlByClassName;
+        }
+        public void setTtlByClassName(Map<String, Long> ttlByClassName) {
+            this.ttlByClassName = ttlByClassName;
+        }
     }
 
 }

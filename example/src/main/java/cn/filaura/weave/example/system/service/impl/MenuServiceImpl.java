@@ -1,7 +1,6 @@
 package cn.filaura.weave.example.system.service.impl;
 
 
-import cn.filaura.weave.example.consts.TableNames;
 import cn.filaura.weave.example.system.entity.Menu;
 import cn.filaura.weave.example.system.mapper.MenuMapper;
 import cn.filaura.weave.example.system.service.MenuService;
@@ -41,17 +40,8 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public List<Menu> listMenuByIes(List<Long> ids) {
-        return menuMapper.listMenuByIds(ids);
+    public List<Menu> listByIds(List<Long> ids) {
+        return menuMapper.listByIds(ids);
     }
 
-    @Override
-    public String getSupportedTable() {
-        return TableNames.MENU;
-    }
-
-    @Override
-    public List<Menu> queryRefData(List<Long> ids) {
-        return listMenuByIes(ids);
-    }
 }

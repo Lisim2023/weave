@@ -34,20 +34,33 @@ mybatis:
 
 
 weave:
-  disable-weave-aspect: false
-  disable-weave-reverse-aspect: false
+  aspect-enabled: true
+  reverse-aspect-enabled: true
+
+  response-body-advice-enabled: true
+
+  table-reference-enabled: true
+  service-reference-enabled: true
+
+  dict-cache-enabled: false
+  record-cache-enabled: false
+  column-projection-cache-enabled: false
+
   dict:
     delimiter: ','
-    field-name-suffix: 'Text'
+    text-field-suffix: 'Text'
+
   ref:
     global-primary-key: 'id'
-    null-display-text: 'null'
+    global-foreign-key-suffix: 'Id'
+    global-method-name: 'listByIds'
+    batch-size: 500
+
   cache:
-    dict-storage-key: "weave:dict"
-    ref-storage-prefix: 'weave:ref'
-    ref-global-ttl: 86400
-    ref-random-ttl-offset: 300
-    ref-table-ttl:
-      sys_user: 3600    # 用户表缓存1小时
-      sys_role: 86400   # 角色表缓存1天
-      sys_dept: 1800    # 部门表缓存30分钟
+    dict-prefix: 'weave:dict'
+    record-prefix: 'weave:record'
+    column-projection-prefix: 'weave:column_projection'
+
+    ttl-seconds: 7200
+    jitter-ratio: 0.1
+    max-jitter-seconds: 300

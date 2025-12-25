@@ -26,11 +26,6 @@ public class UserController {
         return userService.selectUserList();
     }
 
-    @GetMapping("collectionRefTest")
-    public List<User> collectionRefTest() {
-        return userService.selectUsersWithRoleIds();
-    }
-
     @GetMapping("reverseDictTest")
     public List<User> reverseDictTest() {
         List<User> users = new ArrayList<>();

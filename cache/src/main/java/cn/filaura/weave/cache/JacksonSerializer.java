@@ -39,12 +39,12 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public Map<String, String> deSerialize(String string) {
-        if (string == null){
+    public Map<String, Object> deSerialize(String data) {
+        if (data == null){
             return null;
         }
         try {
-            return objectMapper.readValue(string, new TypeReference<Map<String, String>>() {});
+            return objectMapper.readValue(data, new TypeReference<Map<String, Object>>() {});
         } catch (JsonProcessingException e){
             throw new SerializationException(e.getMessage(), e);
         }
