@@ -6,11 +6,12 @@
     <parent>
         <groupId>cn.filaura</groupId>
         <artifactId>weave-parent</artifactId>
-        <version>1.2.0</version>
+        <version>1.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>weave-spring-boot-autoconfigure</artifactId>
     <name>weave-spring-boot-autoconfigure</name>
+    <url>https://github.com/Lisim2023/weave</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -22,7 +23,7 @@
         <dependency>
             <groupId>cn.filaura</groupId>
             <artifactId>weave</artifactId>
-            <version>1.2.0</version>
+            <version>1.2.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -47,7 +48,7 @@
         <dependency>
             <groupId>cn.filaura</groupId>
             <artifactId>weave-cache-redis</artifactId>
-            <version>1.2.0</version>
+            <version>1.2.1-SNAPSHOT</version>
             <optional>true</optional>
         </dependency>
 

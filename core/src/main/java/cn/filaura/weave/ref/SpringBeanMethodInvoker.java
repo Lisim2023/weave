@@ -113,7 +113,7 @@ public class SpringBeanMethodInvoker {
             Method method = Arrays.stream(serviceClass.getMethods())
                     .filter(m -> m.getName().equals(methodName))
                     .filter(m -> m.getParameterCount() == 1)
-                    .filter(m -> List.class.isAssignableFrom(m.getParameterTypes()[0]))
+                    .filter(m -> m.getParameterTypes()[0].isAssignableFrom(List.class))
                     .findFirst()
                     .orElseThrow(() -> new MethodNotFoundException(
                             "Method not found: " + methodName + " in " + serviceClass.getName()));
